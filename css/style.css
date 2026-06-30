@@ -1,0 +1,500 @@
+/* ────────────────────────────────────────────────────────────────────
+   DESIGN TOKENS
+   Subject: Bengali university-admission MCQ test prep.
+   Direction: the texture of an actual answer sheet / OMR bubble form —
+   paper, ink, a checking pen's red, perforated tear-lines — not a SaaS
+   dashboard with cards and gradients.
+   ──────────────────────────────────────────────────────────────────── */
+
+:root{
+  /* Color */
+  --paper:        #FAF7F0;   /* answer-sheet paper */
+  --paper-dim:     #F1ECE0;  /* recessed paper (inputs, wells) */
+  --ink:          #1B1B1F;   /* primary text, like ballpoint */
+  --ink-soft:     #5B574C;   /* secondary text */
+  --rule:         #D8D3C7;   /* hairline dividers, box borders */
+  --rule-strong:  #B9B2A1;
+  --pen-red:      #B3261E;   /* checking-pen red: marks, danger, wrong */
+  --pen-red-dim:  #F4DEDC;
+  --sage:         #4A6B58;   /* correct / success, like an approval stamp */
+  --sage-dim:     #E2E9E1;
+  --gold:         #9C7A2E;   /* roll-number / highlight accent */
+  --gold-dim:     #F1E7CE;
+
+  /* Type */
+  --font-display: 'Tiro Bangla', 'Noto Serif Bengali', serif;
+  --font-body:    'Noto Sans Bengali', 'Inter', sans-serif;
+  --font-mono:    'IBM Plex Mono', monospace;
+
+  /* Layout */
+  --radius-s: 3px;
+  --radius-m: 6px;
+  --max-width: 880px;
+}
+
+*{ box-sizing: border-box; }
+html, body{ margin:0; padding:0; }
+
+body{
+  background: var(--paper);
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(27,27,31,0.035) 1px, transparent 0);
+  background-size: 14px 14px;
+  color: var(--ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+.app-root{ min-height: 100vh; display:flex; flex-direction:column; }
+
+a{ color: inherit; }
+
+@media (prefers-reduced-motion: reduce){
+  *{ animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+}
+
+/* ── Typography ─────────────────────────────────────────────────── */
+
+h1,h2,h3{ font-family: var(--font-display); font-weight: 400; margin: 0; }
+h1{ font-size: 2rem; }
+h2{ font-size: 1.4rem; }
+h3{ font-size: 1.1rem; }
+
+.eyebrow{
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.mono{ font-family: var(--font-mono); }
+
+/* ── Top bar ────────────────────────────────────────────────────── */
+
+.topbar{
+  display:flex; align-items:center; justify-content:space-between;
+  padding: 18px 28px;
+  border-bottom: 1px solid var(--rule);
+  background: var(--paper);
+}
+.topbar .brand{
+  display:flex; align-items:baseline; gap: 10px;
+}
+.topbar .brand .mark{
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  border: 1px solid var(--ink);
+  border-radius: 50%;
+  width: 22px; height: 22px;
+  display:inline-flex; align-items:center; justify-content:center;
+}
+.topbar .who{
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  display:flex; align-items:center; gap: 14px;
+}
+.topbar button.linklike{
+  background:none; border:none; color: var(--pen-red); cursor:pointer;
+  font-family: var(--font-mono); font-size: 0.78rem; text-decoration: underline;
+  padding: 0;
+}
+
+/* ── Page shell ─────────────────────────────────────────────────── */
+
+.page{
+  flex: 1;
+  width: 100%;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 40px 24px 64px;
+}
+
+.page-head{ margin-bottom: 28px; }
+.page-head .eyebrow{ margin-bottom: 6px; }
+
+/* perforated tear-line divider, signature motif */
+.tear-line{
+  border: none;
+  height: 1px;
+  margin: 32px 0;
+  background-image: repeating-linear-gradient(to right, var(--rule-strong) 0 6px, transparent 6px 12px);
+}
+
+/* ── Buttons ────────────────────────────────────────────────────── */
+
+button{ font-family: var(--font-body); cursor:pointer; }
+
+.btn{
+  display:inline-flex; align-items:center; gap:8px;
+  padding: 11px 20px;
+  border: 1.5px solid var(--ink);
+  border-radius: var(--radius-s);
+  background: var(--ink);
+  color: var(--paper);
+  font-weight: 600;
+  font-size: 0.92rem;
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+.btn:hover{ box-shadow: 2px 2px 0 var(--rule-strong); transform: translate(-1px,-1px); }
+.btn:active{ box-shadow: none; transform: translate(0,0); }
+.btn:disabled{ opacity: 0.45; cursor: not-allowed; }
+
+.btn-outline{
+  background: transparent;
+  color: var(--ink);
+}
+.btn-danger{
+  background: var(--pen-red);
+  border-color: var(--pen-red);
+}
+.btn-sage{
+  background: var(--sage);
+  border-color: var(--sage);
+}
+.btn-block{ width: 100%; justify-content:center; }
+.btn-sm{ padding: 7px 14px; font-size: 0.8rem; }
+
+/* ── Forms ──────────────────────────────────────────────────────── */
+
+label{
+  display:block;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin-bottom: 6px;
+}
+
+input[type=text], input[type=password], input[type=number], textarea, select{
+  width: 100%;
+  font-family: var(--font-body);
+  font-size: 0.98rem;
+  padding: 11px 13px;
+  border: 1.5px solid var(--rule);
+  border-radius: var(--radius-s);
+  background: var(--paper-dim);
+  color: var(--ink);
+}
+input:focus, textarea:focus, select:focus{
+  outline: 2px solid var(--gold);
+  outline-offset: 1px;
+  border-color: var(--gold);
+}
+textarea{ resize: vertical; min-height: 64px; }
+
+.field{ margin-bottom: 18px; }
+.field-row{ display:flex; gap: 14px; }
+.field-row > .field{ flex:1; }
+
+.help-text{ font-size: 0.82rem; color: var(--ink-soft); margin-top: 6px; }
+
+/* ── Cards / sheets ─────────────────────────────────────────────── */
+
+.sheet{
+  background: var(--paper);
+  border: 1.5px solid var(--ink);
+  border-radius: var(--radius-m);
+  padding: 28px;
+  position: relative;
+}
+.sheet::before{
+  /* corner staple mark */
+  content: '';
+  position: absolute; top: 10px; left: 10px;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--rule-strong);
+}
+
+.card{
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-m);
+  padding: 20px;
+}
+.card + .card{ margin-top: 14px; }
+
+.grid-2{ display:grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 640px){ .grid-2{ grid-template-columns: 1fr; } }
+
+/* ── Auth screen ────────────────────────────────────────────────── */
+
+.auth-wrap{
+  flex:1; display:flex; align-items:center; justify-content:center;
+  padding: 24px;
+}
+.auth-card{
+  width: 100%; max-width: 420px;
+}
+.role-toggle{
+  display:flex; border: 1.5px solid var(--ink); border-radius: var(--radius-s);
+  overflow:hidden; margin-bottom: 24px;
+}
+.role-toggle button{
+  flex:1; padding: 11px; border:none; background: var(--paper);
+  font-family: var(--font-mono); font-size: 0.8rem; letter-spacing: 0.04em;
+  color: var(--ink-soft);
+  border-right: 1.5px solid var(--ink);
+}
+.role-toggle button:last-child{ border-right:none; }
+.role-toggle button.active{ background: var(--ink); color: var(--paper); }
+
+/* ── OMR bubble options (signature element) ────────────────────── */
+
+.omr-option{
+  display:flex; align-items:flex-start; gap: 14px;
+  padding: 14px 16px;
+  border: 1.5px solid var(--rule);
+  border-radius: var(--radius-s);
+  margin-bottom: 10px;
+  cursor: pointer;
+  background: var(--paper);
+  transition: border-color 0.1s ease, background 0.1s ease;
+}
+.omr-option:hover{ border-color: var(--rule-strong); background: var(--paper-dim); }
+.omr-option.selected{ border-color: var(--ink); background: var(--gold-dim); }
+
+.omr-option.correct{ border-color: var(--sage); background: var(--sage-dim); }
+.omr-option.incorrect{ border-color: var(--pen-red); background: var(--pen-red-dim); }
+
+.omr-bubble{
+  flex: 0 0 auto;
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  border: 2px solid var(--ink);
+  display:flex; align-items:center; justify-content:center;
+  font-family: var(--font-mono); font-weight:600; font-size: 0.85rem;
+  background: transparent;
+}
+.omr-option.selected .omr-bubble{ background: var(--ink); color: var(--paper); }
+.omr-option.correct .omr-bubble{ background: var(--sage); border-color: var(--sage); color: var(--paper); }
+.omr-option.incorrect .omr-bubble{ background: var(--pen-red); border-color: var(--pen-red); color: var(--paper); }
+
+.omr-option .option-text{ flex:1; padding-top: 4px; font-size: 1rem; }
+
+.omr-option input[type=radio]{ display:none; }
+
+/* ── Quiz progress ──────────────────────────────────────────────── */
+
+.progress-rail{
+  display:flex; gap: 6px; margin-bottom: 22px; flex-wrap: wrap;
+}
+.progress-dot{
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  border: 1.5px solid var(--rule-strong);
+  display:flex; align-items:center; justify-content:center;
+  font-family: var(--font-mono); font-size: 0.7rem;
+  color: var(--ink-soft);
+  background: var(--paper);
+}
+.progress-dot.answered{ border-color: var(--gold); background: var(--gold-dim); color: var(--ink); }
+.progress-dot.current{ border-color: var(--ink); background: var(--ink); color: var(--paper); }
+
+.q-meta{
+  display:flex; justify-content: space-between; align-items:baseline;
+  margin-bottom: 14px;
+}
+.q-counter{ font-family: var(--font-mono); font-size: 0.8rem; color: var(--ink-soft); }
+.timer{
+  font-family: var(--font-mono); font-size: 0.85rem;
+  color: var(--pen-red);
+}
+
+.q-text{
+  font-size: 1.18rem;
+  line-height: 1.55;
+  margin-bottom: 22px;
+}
+
+.question-sheet{
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-m);
+  padding: 22px;
+  margin-bottom: 4px;
+}
+.omr-options{ display:flex; flex-direction:column; }
+
+/* ── Results review list ────────────────────────────────────────── */
+
+.review-item{
+  border: 1px solid var(--rule);
+  border-left: 4px solid var(--rule-strong);
+  border-radius: var(--radius-s);
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  background: var(--paper);
+}
+.review-item.is-correct{ border-left-color: var(--sage); }
+.review-item.is-wrong{ border-left-color: var(--pen-red); }
+
+.review-tag{
+  font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.04em;
+}
+.review-item.is-correct .review-tag{ color: var(--sage); }
+.review-item.is-wrong .review-tag{ color: var(--pen-red); }
+
+.mini-option.is-wrong-pick{
+  border-color: var(--pen-red); background: var(--pen-red-dim);
+}
+.ans-tag.wrong{ color: var(--pen-red); }
+
+/* ── Roll number / score badge ──────────────────────────────────── */
+
+.roll-badge{
+  display:inline-flex; align-items:center; gap: 8px;
+  font-family: var(--font-mono); font-size: 0.8rem;
+  border: 1px dashed var(--rule-strong);
+  padding: 5px 10px; border-radius: var(--radius-s);
+  color: var(--ink-soft);
+}
+
+.score-stamp{
+  display:inline-flex; flex-direction:column; align-items:center;
+  border: 3px solid var(--sage);
+  color: var(--sage);
+  border-radius: 50%;
+  width: 130px; height: 130px;
+  transform: rotate(-6deg);
+  font-family: var(--font-mono);
+}
+.score-stamp .big{ font-size: 2.1rem; font-weight: 700; line-height:1; }
+.score-stamp .small{ font-size: 0.68rem; letter-spacing: 0.08em; }
+.score-stamp.fail{ border-color: var(--pen-red); color: var(--pen-red); }
+
+/* ── Tables (manage quizzes list) ───────────────────────────────── */
+
+table.quiz-table{ width:100%; border-collapse: collapse; }
+table.quiz-table th, table.quiz-table td{
+  text-align:left; padding: 11px 10px; border-bottom: 1px solid var(--rule);
+  font-size: 0.92rem;
+}
+table.quiz-table th{
+  font-family: var(--font-mono); font-size: 0.7rem; text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--ink-soft);
+}
+
+/* ── Upload dropzone ────────────────────────────────────────────── */
+
+.dropzone{
+  border: 2px dashed var(--rule-strong);
+  border-radius: var(--radius-m);
+  padding: 36px 20px;
+  text-align: center;
+  color: var(--ink-soft);
+  cursor: pointer;
+  background: var(--paper-dim);
+}
+.dropzone.drag-over{ border-color: var(--gold); background: var(--gold-dim); color: var(--ink); }
+.dropzone input{ display:none; }
+
+.thumb-row{ display:flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+.thumb{
+  width: 84px; height: 84px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-s);
+  overflow:hidden;
+  position:relative;
+}
+.thumb img{ width:100%; height:100%; object-fit: cover; }
+.thumb .remove{
+  position:absolute; top:2px; right:2px;
+  background: var(--pen-red); color:#fff;
+  border:none; border-radius:50%;
+  width:18px; height:18px; font-size:0.7rem; line-height:1;
+}
+
+/* ── OCR scratchpad ─────────────────────────────────────────────── */
+
+.ocr-pad{
+  background: var(--paper-dim);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-s);
+  padding: 14px;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  white-space: pre-wrap;
+  max-height: 220px;
+  overflow-y: auto;
+  color: var(--ink-soft);
+}
+
+/* ── Empty states ───────────────────────────────────────────────── */
+
+.empty-state{
+  text-align:center; padding: 48px 20px; color: var(--ink-soft);
+}
+.empty-state .glyph{ font-size: 2rem; margin-bottom: 10px; }
+
+/* ── Toast ──────────────────────────────────────────────────────── */
+
+.toast-root{
+  position: fixed; top: 18px; right: 18px; z-index: 999;
+  display:flex; flex-direction:column; gap: 8px;
+}
+.toast{
+  background: var(--ink); color: var(--paper);
+  padding: 11px 16px; border-radius: var(--radius-s);
+  font-size: 0.88rem; max-width: 320px;
+  box-shadow: 3px 3px 0 var(--rule-strong);
+  animation: slidein 0.15s ease;
+}
+.toast.error{ background: var(--pen-red); }
+.toast.success{ background: var(--sage); }
+@keyframes slidein{ from{ opacity:0; transform: translateX(8px); } to{ opacity:1; transform:none; } }
+
+/* ── Mini option list (create-quiz question cards) ──────────────── */
+
+.mini-options{ display:flex; flex-direction:column; gap:6px; }
+.mini-option{
+  padding: 8px 10px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-s);
+  font-size: 0.88rem;
+  background: var(--paper-dim);
+  display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+}
+.mini-option.is-answer{ border-color: var(--sage); background: var(--sage-dim); }
+.ans-tag{
+  margin-left:auto; font-family: var(--font-mono); font-size: 0.68rem;
+  color: var(--sage); letter-spacing: 0.04em;
+}
+
+.linklike-btn{
+  background:none; border:none; cursor:pointer;
+  color: var(--ink-soft); font-size: 0.9rem;
+  padding: 2px 6px;
+}
+.linklike-btn:hover{ color: var(--pen-red); }
+
+/* ── Modal dialog (edit question) ───────────────────────────────── */
+
+.modal-overlay{
+  position: fixed; inset: 0; background: rgba(27,27,31,0.45);
+  display:flex; align-items:center; justify-content:center;
+  padding: 20px; z-index: 1000;
+}
+.modal-sheet{
+  width: 100%; max-width: 480px;
+  max-height: 90vh; overflow-y: auto;
+}
+
+/* ── Misc utility ───────────────────────────────────────────────── */
+
+.flex-between{ display:flex; align-items:center; justify-content:space-between; }
+.flex-gap{ display:flex; gap: 10px; align-items:center; flex-wrap: wrap; }
+.mt-0{margin-top:0} .mt-1{margin-top:8px} .mt-2{margin-top:16px} .mt-3{margin-top:24px}
+.mb-0{margin-bottom:0} .mb-1{margin-bottom:8px} .mb-2{margin-bottom:16px} .mb-3{margin-bottom:24px}
+.text-soft{ color: var(--ink-soft); }
+.text-sm{ font-size: 0.85rem; }
+.spinner{
+  display:inline-block; width:14px; height:14px;
+  border:2px solid rgba(255,255,255,0.4); border-top-color:#fff;
+  border-radius:50%; animation: spin 0.7s linear infinite;
+}
+@keyframes spin{ to{ transform: rotate(360deg); } }
