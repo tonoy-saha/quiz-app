@@ -33,7 +33,16 @@ async function loadAndRender(body){
     quizzes = await Drive.loadAllQuizzes();
   }catch(err){
     console.error(err);
-    body.innerHTML = `<div class="card"><p>কুইজ লোড করতে সমস্যা হয়েছে।</p></div>`;
+    if (String(err?.message || "").includes("DRIVE_AUTH_EXPIRED")){
+      body.innerHTML = `
+        <div class="card">
+          <p>Drive সংযোগের মেয়াদ শেষ হয়ে গেছে (প্রায় ১ ঘণ্টা পর এটি হয়)। আবার সংযুক্ত করুন।</p>
+          <a href="#/admin" class="btn btn-sm mt-1" style="text-decoration:none; display:inline-flex;">ড্যাশবোর্ডে ফিরে যান</a>
+        </div>
+      `;
+    } else {
+      body.innerHTML = `<div class="card"><p>কুইজ লোড করতে সমস্যা হয়েছে।</p></div>`;
+    }
     return;
   }
 

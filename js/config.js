@@ -6,7 +6,7 @@ const CONFIG = {
   GOOGLE_CLIENT_ID: "789441256732-qafoite0mpse8t3cuavf5vih27us4t5e.apps.googleusercontent.com",
 
   // Google API key (NOT the OAuth client ID) — needed so a student's
-  // browser, which has no Google login at all, can fetch a public
+  // browser, which has no Google login at all, can fetch a publicgit
   // quiz file. Get one free: Google Cloud Console → APIs & Services →
   // Credentials → Create Credentials → API key. No restrictions needed
   // beyond limiting it to the Drive API if you want to be cautious.

@@ -72,6 +72,11 @@ const Drive = {
     });
     const res = await fetch(url, Object.assign({}, options, { headers }));
     if (res.status === 401){
+      // Token is dead — clear it now so isConnected() stops lying and
+      // the UI can prompt the admin to reconnect instead of silently
+      // failing every Drive call forever.
+      this.accessToken = null;
+      localStorage.removeItem(CONFIG.LS_DRIVE_TOKEN);
       throw new Error("DRIVE_AUTH_EXPIRED");
     }
     return res;

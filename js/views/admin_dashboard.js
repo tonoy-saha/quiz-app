@@ -54,7 +54,20 @@ function bindTopbarEvents(container){
   });
 }
 
-function renderDriveStatusCard(el){
+async function renderDriveStatusCard(el){
+  if (Drive.isConnected()){
+    // A token can exist in storage but be expired (Google tokens last
+    // ~1hr) — do a cheap real check before trusting it, so we don't
+    // show a false "connected" state that then fails silently later.
+    el.innerHTML = `<div class="flex-gap"><span class="spinner" style="border-color: rgba(27,27,31,0.25); border-top-color: var(--ink);"></span> Drive যাচাই হচ্ছে...</div>`;
+    try{
+      await Drive.ensureRootFolder();
+    }catch(err){
+      // Token was dead — Drive._authedFetch already cleared it.
+      // Fall through to render the "not connected" state below.
+    }
+  }
+
   if (Drive.isConnected()){
     el.innerHTML = `
       <div class="flex-between">
@@ -71,7 +84,7 @@ function renderDriveStatusCard(el){
     <div class="flex-between">
       <div>
         <span class="eyebrow">গুগল ড্রাইভ</span>
-        <p class="mt-1 mb-0">⚠️ সংযুক্ত নয়। কুইজ সেভ/লোড করতে আগে Drive সংযুক্ত করুন।</p>
+        <p class="mt-1 mb-0">⚠️ সংযুক্ত নয় (অথবা সংযোগের মেয়াদ শেষ হয়ে গেছে)। কুইজ সেভ/লোড করতে Drive সংযুক্ত করুন।</p>
       </div>
       <button class="btn btn-sm" id="connect-drive-btn">Drive সংযুক্ত করুন</button>
     </div>
