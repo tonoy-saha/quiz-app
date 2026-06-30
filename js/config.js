@@ -10,7 +10,7 @@ const CONFIG = {
   // quiz file. Get one free: Google Cloud Console → APIs & Services →
   // Credentials → Create Credentials → API key. No restrictions needed
   // beyond limiting it to the Drive API if you want to be cautious.
-  GOOGLE_API_KEY: "PASTE_YOUR_API_KEY_HERE",
+  GOOGLE_API_KEY: "AIzaSyBbVeNyg6ZyvLpjHUJ4vWtI59KdkL8rkng",
 
   // Drive scope: per-file access only (app can only see files it creates) — safer than full Drive access
   DRIVE_SCOPE: "https://www.googleapis.com/auth/drive.file",
