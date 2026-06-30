@@ -26,7 +26,7 @@ const Drive = {
           callback: (resp) => {
             if (resp && resp.access_token){
               this.accessToken = resp.access_token;
-              sessionStorage.setItem(CONFIG.LS_DRIVE_TOKEN, resp.access_token);
+              localStorage.setItem(CONFIG.LS_DRIVE_TOKEN, resp.access_token);
               this._onAuthResolved && this._onAuthResolved(resp);
             } else {
               this._onAuthRejected && this._onAuthRejected(resp);
@@ -53,7 +53,7 @@ const Drive = {
 
   // Try to silently restore a token from this browser session
   restoreFromSession(){
-    const t = sessionStorage.getItem(CONFIG.LS_DRIVE_TOKEN);
+    const t = localStorage.getItem(CONFIG.LS_DRIVE_TOKEN);
     if (t) this.accessToken = t;
     return !!t;
   },
@@ -63,7 +63,7 @@ const Drive = {
       google.accounts.oauth2.revoke(this.accessToken, () => {});
     }
     this.accessToken = null;
-    sessionStorage.removeItem(CONFIG.LS_DRIVE_TOKEN);
+    localStorage.removeItem(CONFIG.LS_DRIVE_TOKEN);
   },
 
   async _authedFetch(url, options = {}){
@@ -188,11 +188,16 @@ const Drive = {
   // student's browser (no Google session at all) can read quiz data
   // directly from Drive via a public download URL.
   async makeReadablePublic(fileId){
-    await this._authedFetch(`https://www.googleapis.com/drive/v3/files/${fileId}/permissions`, {
+    const res = await this._authedFetch(`https://www.googleapis.com/drive/v3/files/${fileId}/permissions`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ role: "reader", type: "anyone" }),
     });
+    if (!res.ok){
+      const errBody = await res.text().catch(() => "");
+      console.error("makeReadablePublic failed:", res.status, errBody);
+      throw new Error(`DRIVE_PERMISSION_FAILED: ${res.status}`);
+    }
   },
 
   // Public download URL for a file made readable via makeReadablePublic.
