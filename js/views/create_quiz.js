@@ -26,8 +26,9 @@ function renderCreateQuiz(container){
         <input type="text" id="quiz-title" placeholder="যেমন: বাংলা — জাতীয় বিশ্ববিদ্যালয় ভর্তি ২০১৪-১৫" />
       </div>
 
-      <div class="role-toggle" style="max-width:420px;">
-        <button data-mode="image" class="active">ছবি থেকে যুক্ত করুন</button>
+      <div class="role-toggle" style="max-width:620px;">
+        <button data-mode="bulk" class="active">বাল্ক পেস্ট (প্রস্তাবিত)</button>
+        <button data-mode="image">ছবি থেকে (OCR)</button>
         <button data-mode="manual">টাইপ করে যুক্ত করুন</button>
       </div>
 
@@ -53,7 +54,7 @@ function renderCreateQuiz(container){
 
   const modeToggle = container.querySelectorAll(".role-toggle button");
   const modeSlot = container.querySelector("#add-mode-slot");
-  let mode = "image";
+  let mode = "bulk";
 
   modeToggle.forEach(b => b.addEventListener("click", () => {
     mode = b.dataset.mode;
@@ -62,7 +63,8 @@ function renderCreateQuiz(container){
   }));
 
   function renderMode(){
-    if (mode === "image") renderImageMode(modeSlot, state, refreshQuestionList);
+    if (mode === "bulk") renderBulkMode(modeSlot, state, refreshQuestionList);
+    else if (mode === "image") renderImageMode(modeSlot, state, refreshQuestionList);
     else renderManualMode(modeSlot, state, refreshQuestionList);
   }
 
@@ -159,6 +161,98 @@ function renderCreateQuiz(container){
 }
 
 // ── Image → OCR mode ────────────────────────────────────────────────
+
+// ── Bulk paste mode ──────────────────────────────────────────────────
+// The most accurate and fastest way to get questions in: send the
+// question-bank image to Claude in chat, ask it to transcribe into the
+// format below, then paste the result here. Claude's own vision reads
+// dense/watermarked/small-font Bengali text far more reliably than any
+// in-browser OCR engine — this sidesteps OCR accuracy problems
+// entirely instead of trying to fix them.
+
+const BULK_FORMAT_EXAMPLE =
+`Q: প্রশ্নের লেখা এখানে
+A) অপশন ১
+B) অপশন ২
+C) অপশন ৩
+D) অপশন ৪
+Answer: A
+
+Q: পরের প্রশ্ন এখানে
+A) ...
+B) ...
+C) ...
+D) ...
+Answer: C`;
+
+function renderBulkMode(slot, state, onQuestionsChanged){
+  slot.innerHTML = `
+    <div class="card">
+      <p class="help-text">
+        সবচেয়ে নির্ভুল উপায়: প্রশ্নব্যাংকের ছবি Claude-কে (এই চ্যাটে) দিন এবং নিচের ফরম্যাটে লিখে দিতে বলুন,
+        তারপর ফলাফল এখানে পেস্ট করুন। ব্রাউজার OCR-এর চেয়ে Claude-এর নিজের ছবি পড়ার ক্ষমতা ঘন/জলছাপযুক্ত/ছোট ফন্টের
+        বাংলা টেক্সটে অনেক বেশি নির্ভুল।
+      </p>
+      <div class="field mt-2">
+        <label>ফরম্যাট (উদাহরণ)</label>
+        <pre class="ocr-pad" style="white-space:pre-wrap; font-size:0.82rem;">${escapeHtml(BULK_FORMAT_EXAMPLE)}</pre>
+      </div>
+      <div class="field mt-2">
+        <label for="bulk-paste-area">এখানে পেস্ট করুন</label>
+        <textarea id="bulk-paste-area" style="min-height:220px;" placeholder="Q: ... 
+A) ...
+B) ...
+C) ...
+D) ...
+Answer: A"></textarea>
+      </div>
+      <button class="btn" id="parse-bulk-btn">প্রশ্নগুলো যুক্ত করুন</button>
+      <p id="bulk-parse-status" class="text-soft text-sm mt-1"></p>
+    </div>
+  `;
+
+  slot.querySelector("#parse-bulk-btn").addEventListener("click", () => {
+    const raw = slot.querySelector("#bulk-paste-area").value;
+    const statusEl = slot.querySelector("#bulk-parse-status");
+    const parsed = parseBulkQuestions(raw);
+
+    if (parsed.length === 0){
+      statusEl.textContent = "";
+      toast("কোনো প্রশ্ন পার্স করা যায়নি। ফরম্যাট যাচাই করুন।", "error");
+      return;
+    }
+
+    parsed.forEach(q => state.questions.push({
+      id: uid("q"),
+      question: q.question,
+      options: q.options,
+      answer: q.answer,
+    }));
+
+    statusEl.textContent = `${parsed.length}টি প্রশ্ন যুক্ত হয়েছে।`;
+    toast(`${parsed.length}টি প্রশ্ন যুক্ত হয়েছে।`, "success");
+    slot.querySelector("#bulk-paste-area").value = "";
+    onQuestionsChanged();
+  });
+}
+
+// Parses "Q: ... A) ... B) ... C) ... D) ... Answer: X" blocks, tolerant
+// of extra whitespace/newlines within each field, and accepts either
+// "Answer:" or "উত্তর:" as the answer marker.
+function parseBulkQuestions(text){
+  const re = /Q:\s*([\s\S]*?)\s*A\)\s*([\s\S]*?)\s*B\)\s*([\s\S]*?)\s*C\)\s*([\s\S]*?)\s*D\)\s*([\s\S]*?)\s*(?:Answer|উত্তর)\s*:?\s*([A-Da-d])/gi;
+  const results = [];
+  let match;
+  while ((match = re.exec(text)) !== null){
+    const [, q, a, b, c, d, ans] = match;
+    results.push({
+      question: q.trim(),
+      options: { A: a.trim(), B: b.trim(), C: c.trim(), D: d.trim() },
+      answer: ans.toUpperCase(),
+    });
+  }
+  return results;
+}
 
 function renderImageMode(slot, state, onQuestionsChanged){
   slot.innerHTML = `
