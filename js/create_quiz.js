@@ -131,15 +131,14 @@ function renderCreateQuiz(container){
 
     try{
       await Drive.saveQuiz(quiz);
-      toast("কুইজ সেভ হয়েছে।", "success");
-      location.hash = "#/admin/manage";
+      downloadQuizFile(quiz);
+      toast("কুইজ সেভ হয়েছে এবং ফাইল ডাউনলোড হয়েছে।", "success");
+      showPublishInstructions(quiz);
     }catch(err){
       console.error(err);
       statusEl.textContent = "";
       const msg = String(err?.message || "");
-      if (msg.includes("DRIVE_PERMISSION_FAILED")){
-        toast("কুইজ সেভ হয়েছে কিন্তু পাবলিক লিংক তৈরি করা যায়নি। অ্যাডমিনকে (নিজেকে) জানান — Drive API সক্রিয় আছে কিনা যাচাই করুন।", "error");
-      } else if (msg.includes("DRIVE_AUTH_EXPIRED")){
+      if (msg.includes("DRIVE_AUTH_EXPIRED")){
         toast("Drive সংযোগের মেয়াদ শেষ। আবার Drive সংযুক্ত করুন।", "error");
       } else {
         toast("সেভ করতে সমস্যা হয়েছে। আবার চেষ্টা করুন।", "error");
@@ -371,4 +370,67 @@ function openEditDialog(state, qid, onChanged){
     onChanged();
     toast("প্রশ্ন আপডেট হয়েছে।", "success");
   });
+}
+
+// ── Publish workflow (static file, not live Drive read) ─────────────
+// Google Drive's API cannot serve file downloads to a fully anonymous
+// browser (confirmed: 403 "doesn't allow unregistered callers" even on
+// "anyone with the link" files — this is a real Drive API limitation,
+// not a misconfiguration). So instead, the admin downloads the quiz as
+// a plain JSON file and commits it into the GitHub repo's quizzes/
+// folder, where GitHub Pages serves it as a normal public static file —
+// no auth, no API key, no expiry, no 403s, ever.
+
+function downloadQuizFile(quiz){
+  const filename = `${quiz.id}.json`;
+  const blob = new Blob([JSON.stringify(quiz, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function showPublishInstructions(quiz){
+  const filename = `${quiz.id}.json`;
+  const studentLink = `${location.origin}${location.pathname}#/student/take-static/${quiz.id}`;
+
+  const overlay = document.createElement("div");
+  overlay.className = "modal-overlay";
+  overlay.innerHTML = `
+    <div class="modal-sheet sheet">
+      <h3 class="mb-2">কুইজ পাবলিশ করতে আরেকটি ধাপ বাকি</h3>
+      <p class="text-sm">"${escapeHtml(quiz.title)}" ফাইলটি (<code>${filename}</code>) ডাউনলোড হয়েছে। শিক্ষার্থীরা যেন এটি দেখতে পারে, তার জন্য:</p>
+      <ol class="text-sm mt-2" style="padding-left: 20px; line-height:1.8;">
+        <li>VS Code-এ আপনার প্রজেক্ট ফোল্ডারে <code>quizzes</code> নামে একটি ফোল্ডার তৈরি করুন (না থাকলে)</li>
+        <li>ডাউনলোড হওয়া <code>${filename}</code> ফাইলটি সেই <code>quizzes</code> ফোল্ডারে রাখুন</li>
+        <li>টার্মিনালে চালান:
+          <pre class="ocr-pad mt-1" style="white-space:pre-wrap;">git add .
+git commit -m "Publish quiz: ${escapeHtml(quiz.title)}"
+git push</pre>
+        </li>
+        <li>১-২ মিনিট পর নিচের লিংকটি কাজ করবে:</li>
+      </ol>
+      <div class="field mt-2">
+        <input type="text" readonly value="${studentLink}" id="static-link-input" onclick="this.select()" />
+      </div>
+      <div class="flex-gap mt-2">
+        <button class="btn" id="copy-static-link">লিংক কপি করুন</button>
+        <button class="btn btn-outline" id="close-instructions">বুঝেছি</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  overlay.querySelector("#copy-static-link").addEventListener("click", async () => {
+    try{ await navigator.clipboard.writeText(studentLink); toast("লিংক কপি হয়েছে।", "success"); }
+    catch(e){ /* readonly input is already selected as fallback */ }
+  });
+
+  const closeAndGo = () => { overlay.remove(); location.hash = "#/admin/manage"; };
+  overlay.querySelector("#close-instructions").addEventListener("click", closeAndGo);
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) closeAndGo(); });
 }

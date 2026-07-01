@@ -72,7 +72,8 @@ async function loadAndRender(body){
             <td class="mono text-sm">${new Date(q.createdAt).toLocaleDateString("bn-BD")}</td>
             <td>
               <div class="flex-gap">
-                <button class="btn btn-sm btn-outline copy-link" data-id="${q.id}" data-fileid="${q._driveFileId}">লিংক কপি</button>
+                <button class="btn btn-sm btn-outline copy-link" data-id="${q.id}">লিংক কপি</button>
+                <button class="btn btn-sm btn-outline download-file" data-id="${q.id}">ফাইল ডাউনলোড</button>
                 <button class="btn btn-sm btn-outline view-results" data-id="${q.id}">রেজাল্ট</button>
                 <button class="btn btn-sm btn-danger delete-quiz" data-id="${q.id}">মুছুন</button>
               </div>
@@ -81,17 +82,38 @@ async function loadAndRender(body){
         `).join("")}
       </tbody>
     </table>
+    <p class="text-soft text-sm mt-2">
+      লিংক কাজ করার আগে "ফাইল ডাউনলোড" চেপে quizzes ফোল্ডারে রেখে git push করতে হবে।
+    </p>
     <div id="results-panel" class="mt-3"></div>
   `;
 
   body.querySelectorAll(".copy-link").forEach(btn => btn.addEventListener("click", async () => {
-    const link = `${location.origin}${location.pathname}#/student/take/${btn.dataset.fileid}`;
+    const link = `${location.origin}${location.pathname}#/student/take-static/${btn.dataset.id}`;
     try{
       await navigator.clipboard.writeText(link);
       toast("শিক্ষার্থীদের জন্য লিংক কপি হয়েছে।", "success");
     }catch(e){
       prompt("লিংকটি কপি করুন:", link);
     }
+  }));
+
+  body.querySelectorAll(".download-file").forEach(btn => btn.addEventListener("click", () => {
+    const quiz = quizzes.find(q => q.id === btn.dataset.id);
+    const filename = `${quiz.id}.json`;
+    // Strip the internal Drive bookkeeping field before publishing —
+    // students don't need it, keeps the static file clean.
+    const { _driveFileId, ...publicQuiz } = quiz;
+    const blob = new Blob([JSON.stringify(publicQuiz, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    toast(`${filename} ডাউনলোড হয়েছে। quizzes ফোল্ডারে রেখে push করুন।`, "success");
   }));
 
   body.querySelectorAll(".delete-quiz").forEach(btn => btn.addEventListener("click", async () => {

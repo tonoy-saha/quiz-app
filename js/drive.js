@@ -172,6 +172,12 @@ const Drive = {
 
   // ── High-level helpers used by views ──────────────────────────────
 
+  // Drive here is only the admin's private quiz management store
+  // (list/edit/delete) — NOT how students read quizzes. Drive's API
+  // refuses anonymous alt=media downloads even for "anyone with the
+  // link" files, confirmed via a live 403 "unregistered callers" error.
+  // Students instead read a static JSON file the admin publishes into
+  // the repo's quizzes/ folder — see create_quiz.js / manage_quizzes.js.
   async saveQuiz(quiz){
     const parent = await this.ensureRootFolder();
     const filename = `quiz_${quiz.id}.json`;
@@ -182,9 +188,6 @@ const Drive = {
     } else {
       const created = await this.writeJsonFile(filename, parent, quiz);
       fileId = created.id;
-      // Make readable via link, with no Google login, so students can
-      // fetch the quiz without being signed in to anything.
-      await this.makeReadablePublic(fileId);
     }
     return fileId;
   },

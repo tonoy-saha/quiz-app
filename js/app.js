@@ -27,6 +27,9 @@ Router.add("/student", () => requireRole("student", {}, renderStudentDashboard))
 Router.add("/student/take/:fileId", (params) =>
   requireRole("student", params, (el) => renderTakeQuiz(el, params.fileId))
 );
+Router.add("/student/take-static/:quizId", (params) =>
+  requireRole("student", params, (el) => renderTakeQuizStatic(el, params.quizId))
+);
 Router.add("/student/results", () => requireRole("student", {}, renderResults));
 
 async function boot(){

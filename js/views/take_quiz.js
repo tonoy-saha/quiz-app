@@ -1,5 +1,51 @@
 // ── Take quiz view ───────────────────────────────────────────────────
 
+// Static-file variant: fetches the quiz JSON from this same site's own
+// quizzes/ folder (plain GitHub Pages static hosting) — no Drive API,
+// no API key, no auth, no expiry. This is the path actually used by
+// student links now, since Drive's API refuses anonymous/API-key-only
+// downloads even for "anyone with the link" files.
+async function renderTakeQuizStatic(container, quizId){
+  container.innerHTML = `
+    ${renderTopbar()}
+    <div class="page">
+      <div class="flex-gap"><span class="spinner" style="border-color: rgba(27,27,31,0.25); border-top-color: var(--ink);"></span> কুইজ লোড হচ্ছে...</div>
+    </div>
+  `;
+  bindTopbarEvents(container);
+
+  let quiz;
+  try{
+    // Relative path so this works correctly whether the app lives at
+    // the domain root or under a sub-path like /quiz-app/.
+    const res = await fetch(`quizzes/${quizId}.json`, { cache: "no-store" });
+    if (!res.ok){
+      if (res.status === 404){
+        showLoadError(container, "কুইজ ফাইল পাওয়া যায়নি (404)। অ্যাডমিন এখনো quizzes ফোল্ডারে ফাইলটি পুশ করেননি, অথবা লিংকটি ভুল।");
+      } else {
+        showLoadError(container, `কুইজ লোড করতে সমস্যা হয়েছে (কোড ${res.status})। অ্যাডমিনকে জানান।`);
+      }
+      return;
+    }
+    quiz = await res.json();
+  }catch(err){
+    console.error(err);
+    showLoadError(container, "নেটওয়ার্ক সমস্যা — ইন্টারনেট সংযোগ যাচাই করুন।");
+    return;
+  }
+
+  if (!quiz.questions || quiz.questions.length === 0){
+    showLoadError(container, "এই কুইজে কোনো প্রশ্ন নেই।");
+    return;
+  }
+
+  startQuizFlow(container, quiz, quizId);
+}
+
+// Old Drive-based variant — kept for backward compatibility with any
+// links already shared, but Drive's API blocks anonymous alt=media
+// downloads even on "anyone with the link" files, so this path will
+// reliably 403. New links should always use take-static instead.
 async function renderTakeQuiz(container, fileId){
   container.innerHTML = `
     ${renderTopbar()}
@@ -17,11 +63,20 @@ async function renderTakeQuiz(container, fileId){
   let quiz;
   try{
     const res = await fetch(Drive.publicFileUrl(fileId));
-    if (!res.ok) throw new Error("fetch failed: " + res.status);
+    if (!res.ok){
+      if (res.status === 403){
+        showLoadError(container, "এই পুরনো ধরনের লিংক আর কাজ করে না (Google Drive সীমাবদ্ধতা)। অ্যাডমিনের কাছ থেকে নতুন লিংক নিন।");
+      } else if (res.status === 404){
+        showLoadError(container, "কুইজ পাওয়া যায়নি (404)। লিংকটি সঠিক কিনা যাচাই করুন।");
+      } else {
+        showLoadError(container, `কুইজ লোড করতে সমস্যা হয়েছে (কোড ${res.status})। অ্যাডমিনকে জানান।`);
+      }
+      return;
+    }
     quiz = await res.json();
   }catch(err){
     console.error(err);
-    showLoadError(container, "কুইজ পাওয়া যায়নি। লিংকটি সঠিক কিনা যাচাই করুন, অথবা অ্যাডমিনকে জানান।");
+    showLoadError(container, "নেটওয়ার্ক সমস্যা — ইন্টারনেট সংযোগ যাচাই করুন।");
     return;
   }
 
