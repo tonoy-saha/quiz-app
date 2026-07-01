@@ -21,7 +21,7 @@ function renderStudentDashboard(container){
         <div class="field-row mt-2" style="align-items:flex-end;">
           <div class="field" style="margin-bottom:0;">
             <label for="quiz-link-input">কুইজ লিংক বা আইডি</label>
-            <input type="text" id="quiz-link-input" placeholder="https://.../#/student/take/xxxxx বা শুধু xxxxx" />
+            <input type="text" id="quiz-link-input" placeholder="https://.../#/student/take-static/xxxxx বা শুধু xxxxx" />
           </div>
           <button class="btn" id="go-to-quiz-btn">পরীক্ষায় যান</button>
         </div>
@@ -34,8 +34,18 @@ function renderStudentDashboard(container){
   container.querySelector("#go-to-quiz-btn").addEventListener("click", () => {
     const raw = container.querySelector("#quiz-link-input").value.trim();
     if (!raw){ toast("লিংক বা আইডি দিন।", "error"); return; }
-    const match = raw.match(/take\/([^/?#]+)/);
-    const fileId = match ? match[1] : raw;
-    location.hash = `#/student/take/${fileId}`;
+
+    const staticMatch = raw.match(/take-static\/([^/?#]+)/);
+    if (staticMatch){
+      location.hash = `#/student/take-static/${staticMatch[1]}`;
+      return;
+    }
+    const oldMatch = raw.match(/take\/([^/?#]+)/);
+    if (oldMatch){
+      location.hash = `#/student/take/${oldMatch[1]}`;
+      return;
+    }
+    // Just an ID, no full link — assume the new static format.
+    location.hash = `#/student/take-static/${raw}`;
   });
 }
