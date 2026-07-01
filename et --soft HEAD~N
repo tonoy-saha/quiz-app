@@ -1,0 +1,5 @@
+[33m8fe44bd[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m bug solved
+[33m4b19c92[m Add one-click quiz publishing via GitHub API
+[33me1ca925[m[33m ([m[1;31morigin/main[m[33m)[m Fix: publish quizzes as static files instead of Drive public links
+[33mce2f4dd[m Fix stale Drive token detection and reconnect flow
+[33m573d079[m Fix drive token persistence and error messages

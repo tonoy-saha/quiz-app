@@ -73,7 +73,7 @@ async function loadAndRender(body){
             <td>
               <div class="flex-gap">
                 <button class="btn btn-sm btn-outline copy-link" data-id="${q.id}">লিংক কপি</button>
-                <button class="btn btn-sm btn-outline download-file" data-id="${q.id}">ফাইল ডাউনলোড</button>
+                <button class="btn btn-sm btn-outline republish" data-id="${q.id}">পুনরায় পাবলিশ</button>
                 <button class="btn btn-sm btn-outline view-results" data-id="${q.id}">রেজাল্ট</button>
                 <button class="btn btn-sm btn-danger delete-quiz" data-id="${q.id}">মুছুন</button>
               </div>
@@ -82,9 +82,6 @@ async function loadAndRender(body){
         `).join("")}
       </tbody>
     </table>
-    <p class="text-soft text-sm mt-2">
-      লিংক কাজ করার আগে "ফাইল ডাউনলোড" চেপে quizzes ফোল্ডারে রেখে git push করতে হবে।
-    </p>
     <div id="results-panel" class="mt-3"></div>
   `;
 
@@ -98,30 +95,38 @@ async function loadAndRender(body){
     }
   }));
 
-  body.querySelectorAll(".download-file").forEach(btn => btn.addEventListener("click", () => {
+  body.querySelectorAll(".republish").forEach(btn => btn.addEventListener("click", async () => {
     const quiz = quizzes.find(q => q.id === btn.dataset.id);
-    const filename = `${quiz.id}.json`;
-    // Strip the internal Drive bookkeeping field before publishing —
-    // students don't need it, keeps the static file clean.
-    const { _driveFileId, ...publicQuiz } = quiz;
-    const blob = new Blob([JSON.stringify(publicQuiz, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-    toast(`${filename} ডাউনলোড হয়েছে। quizzes ফোল্ডারে রেখে push করুন।`, "success");
+    if (!GitHubPublish.isConfigured()){
+      toast("GitHub টোকেন কনফিগার করা হয়নি। config.js যাচাই করুন।", "error");
+      return;
+    }
+    btn.disabled = true;
+    const original = btn.textContent;
+    btn.textContent = "পাবলিশ হচ্ছে...";
+    try{
+      const { _driveFileId, ...publicQuiz } = quiz;
+      await GitHubPublish.publishJson(`quizzes/${quiz.id}.json`, publicQuiz, `Republish quiz: ${quiz.title}`);
+      toast("পুনরায় পাবলিশ হয়েছে।", "success");
+    }catch(err){
+      console.error(err);
+      toast("পাবলিশ ব্যর্থ হয়েছে। আবার চেষ্টা করুন।", "error");
+    }finally{
+      btn.disabled = false;
+      btn.textContent = original;
+    }
   }));
 
   body.querySelectorAll(".delete-quiz").forEach(btn => btn.addEventListener("click", async () => {
     const quiz = quizzes.find(q => q.id === btn.dataset.id);
-    if (!confirm(`"${quiz.title}" কুইজটি মুছে ফেলতে চান?`)) return;
+    if (!confirm(`"${quiz.title}" কুইজটি মুছে ফেলতে চান? এটি Drive ও পাবলিশড লিংক দুটো থেকেই মুছে যাবে।`)) return;
     btn.disabled = true;
     try{
       await Drive.deleteQuiz(quiz);
+      if (GitHubPublish.isConfigured()){
+        try{ await GitHubPublish.deleteFile(`quizzes/${quiz.id}.json`, `Delete quiz: ${quiz.title}`); }
+        catch(e){ console.error("GitHub delete failed (non-fatal):", e); }
+      }
       toast("কুইজ মুছে ফেলা হয়েছে।", "success");
       loadAndRender(body);
     }catch(err){

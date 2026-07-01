@@ -117,6 +117,10 @@ function renderCreateQuiz(container){
       toast("প্রথমে Google Drive সংযুক্ত করুন (ড্যাশবোর্ডে যান)।", "error");
       return;
     }
+    if (!GitHubPublish.isConfigured()){
+      toast("GitHub টোকেন এখনো কনফিগার করা হয়নি। config.js দেখুন।", "error");
+      return;
+    }
 
     const btn = container.querySelector("#save-quiz-btn");
     btn.disabled = true;
@@ -131,12 +135,23 @@ function renderCreateQuiz(container){
 
     try{
       await Drive.saveQuiz(quiz);
-      toast("কুইজ সেভ হয়েছে।", "success");
-      location.hash = "#/admin/manage";
+      statusEl.textContent = "পাবলিশ হচ্ছে...";
+      await GitHubPublish.publishJson(`quizzes/${quiz.id}.json`, quiz, `Publish quiz: ${quiz.title}`);
+      toast("কুইজ পাবলিশ হয়েছে! ১-২ মিনিটের মধ্যে লিংকটি কাজ করবে।", "success");
+      showPublishSuccess(quiz);
     }catch(err){
       console.error(err);
       statusEl.textContent = "";
-      toast("সেভ করতে সমস্যা হয়েছে। আবার চেষ্টা করুন।", "error");
+      const msg = String(err?.message || "");
+      if (msg.includes("DRIVE_AUTH_EXPIRED")){
+        toast("Drive সংযোগের মেয়াদ শেষ। আবার Drive সংযুক্ত করুন।", "error");
+      } else if (msg.includes("GITHUB_TOKEN_MISSING") || msg.includes("GITHUB_TOKEN_INVALID")){
+        toast("কুইজ Drive-এ সেভ হয়েছে কিন্তু পাবলিশ ব্যর্থ হয়েছে — GitHub টোকেন ভুল বা মেয়াদোত্তীর্ণ। config.js যাচাই করুন।", "error");
+      } else if (msg.includes("GITHUB_PUBLISH_FAILED") || msg.includes("GITHUB_FETCH_FAILED")){
+        toast("কুইজ Drive-এ সেভ হয়েছে কিন্তু GitHub-এ পাবলিশ ব্যর্থ হয়েছে। আবার চেষ্টা করুন।", "error");
+      } else {
+        toast("সেভ করতে সমস্যা হয়েছে। আবার চেষ্টা করুন।", "error");
+      }
     }finally{
       btn.disabled = false;
     }
@@ -364,4 +379,40 @@ function openEditDialog(state, qid, onChanged){
     onChanged();
     toast("প্রশ্ন আপডেট হয়েছে।", "success");
   });
+}
+
+// ── Publish (one-click, via GitHub API) ──────────────────────────────
+// Quiz files are pushed straight into this repo's quizzes/ folder via
+// GitHub's Contents API (see github.js), so a successful save is
+// already live — no manual download/move/git-push required. GitHub
+// Pages just needs ~1-2 minutes to redeploy after the commit lands.
+
+function showPublishSuccess(quiz){
+  const studentLink = `${location.origin}${location.pathname}#/student/take-static/${quiz.id}`;
+
+  const overlay = document.createElement("div");
+  overlay.className = "modal-overlay";
+  overlay.innerHTML = `
+    <div class="modal-sheet sheet">
+      <h3 class="mb-2">✅ "${escapeHtml(quiz.title)}" পাবলিশ হয়েছে</h3>
+      <p class="text-sm">GitHub Pages-এ প্রকাশিত হতে সাধারণত ১-২ মিনিট সময় লাগে। এই লিংকটি শিক্ষার্থীদের পাঠান:</p>
+      <div class="field mt-2">
+        <input type="text" readonly value="${studentLink}" id="static-link-input" onclick="this.select()" />
+      </div>
+      <div class="flex-gap mt-2">
+        <button class="btn" id="copy-static-link">লিংক কপি করুন</button>
+        <button class="btn btn-outline" id="close-instructions">ঠিক আছে</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  overlay.querySelector("#copy-static-link").addEventListener("click", async () => {
+    try{ await navigator.clipboard.writeText(studentLink); toast("লিংক কপি হয়েছে।", "success"); }
+    catch(e){ /* readonly input is already selected as fallback */ }
+  });
+
+  const closeAndGo = () => { overlay.remove(); location.hash = "#/admin/manage"; };
+  overlay.querySelector("#close-instructions").addEventListener("click", closeAndGo);
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) closeAndGo(); });
 }
