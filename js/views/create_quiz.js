@@ -210,11 +210,95 @@ function renderImageMode(slot, state, onQuestionsChanged){
     }));
     thumbRow.querySelectorAll(".thumb img").forEach(im => im.addEventListener("click", () => {
       const i = Number(im.closest(".thumb").dataset.i);
-      runOcrOn(state.images[i]);
+      openCropTool(state.images[i]);
     }));
   }
 
-  async function runOcrOn(item){
+  function openCropTool(item){
+    resultSlot.innerHTML = `
+      <div class="card">
+        <div class="flex-between">
+          <span class="eyebrow">একটি প্রশ্ন নির্বাচন করুন</span>
+        </div>
+        <p class="help-text mt-1">
+          ছবির উপর টেনে শুধু একটি প্রশ্ন (প্রশ্ন + ৪টি অপশন) নির্বাচন করুন — পুরো পৃষ্ঠার বদলে একটি প্রশ্নে OCR চালালে ফলাফল অনেক বেশি নির্ভুল হয়।
+        </p>
+        <div class="crop-stage mt-2" id="crop-stage">
+          <img src="${item.url}" id="crop-img" alt="crop source" draggable="false" />
+          <div class="crop-selection" id="crop-selection" hidden></div>
+        </div>
+        <div class="flex-gap mt-2">
+          <button class="btn" id="extract-selection-btn" disabled>নির্বাচিত অংশ থেকে বের করুন</button>
+          <button class="btn btn-outline" id="extract-whole-btn">পুরো ছবি থেকে বের করুন</button>
+        </div>
+      </div>
+    `;
+
+    const stage = resultSlot.querySelector("#crop-stage");
+    const imgEl = resultSlot.querySelector("#crop-img");
+    const selEl = resultSlot.querySelector("#crop-selection");
+    const extractSelBtn = resultSlot.querySelector("#extract-selection-btn");
+    const extractWholeBtn = resultSlot.querySelector("#extract-whole-btn");
+
+    let dragStart = null;
+    let currentRect = null; // in displayed-pixel space, relative to stage
+
+    function pointFromEvent(e){
+      const rect = stage.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      return { x: clientX - rect.left, y: clientY - rect.top };
+    }
+
+    function startDrag(e){
+      e.preventDefault();
+      dragStart = pointFromEvent(e);
+      selEl.hidden = false;
+    }
+    function duringDrag(e){
+      if (!dragStart) return;
+      e.preventDefault();
+      const p = pointFromEvent(e);
+      const stageRect = stage.getBoundingClientRect();
+      const x = Math.max(0, Math.min(stageRect.width, Math.min(dragStart.x, p.x)));
+      const y = Math.max(0, Math.min(stageRect.height, Math.min(dragStart.y, p.y)));
+      const w = Math.abs(p.x - dragStart.x);
+      const h = Math.abs(p.y - dragStart.y);
+      currentRect = { x, y, w, h };
+      selEl.style.left = `${x}px`;
+      selEl.style.top = `${y}px`;
+      selEl.style.width = `${w}px`;
+      selEl.style.height = `${h}px`;
+    }
+    function endDrag(){
+      dragStart = null;
+      extractSelBtn.disabled = !currentRect || currentRect.w < 10 || currentRect.h < 10;
+    }
+
+    stage.addEventListener("mousedown", startDrag);
+    stage.addEventListener("mousemove", duringDrag);
+    window.addEventListener("mouseup", endDrag);
+    stage.addEventListener("touchstart", startDrag, { passive: false });
+    stage.addEventListener("touchmove", duringDrag, { passive: false });
+    stage.addEventListener("touchend", endDrag);
+
+    extractWholeBtn.addEventListener("click", () => runOcrOn(item, null));
+    extractSelBtn.addEventListener("click", () => {
+      if (!currentRect) return;
+      // Convert displayed-pixel selection into natural-image pixel space.
+      const scaleX = imgEl.naturalWidth / imgEl.clientWidth;
+      const scaleY = imgEl.naturalHeight / imgEl.clientHeight;
+      const naturalRect = {
+        x: currentRect.x * scaleX,
+        y: currentRect.y * scaleY,
+        w: currentRect.w * scaleX,
+        h: currentRect.h * scaleY,
+      };
+      runOcrOn(item, naturalRect);
+    });
+  }
+
+  async function runOcrOn(item, cropRect){
     resultSlot.innerHTML = `
       <div class="card">
         <div class="flex-gap"><span class="spinner" style="border-color: rgba(27,27,31,0.25); border-top-color: var(--ink);"></span> <span id="ocr-progress">প্রস্তুত হচ্ছে...</span></div>
@@ -222,7 +306,11 @@ function renderImageMode(slot, state, onQuestionsChanged){
     `;
     const progressEl = resultSlot.querySelector("#ocr-progress");
     try{
-      const text = await OCR.extractText(item.file, (m) => {
+      let source = item.file;
+      if (cropRect){
+        source = await cropImageToCanvas(item.url, cropRect);
+      }
+      const text = await OCR.extractText(source, (m) => {
         if (m.status === "recognizing text"){
           progressEl.textContent = `টেক্সট বের করা হচ্ছে... ${Math.round((m.progress||0)*100)}%`;
         } else if (m.status){
@@ -263,6 +351,28 @@ function renderManualMode(slot, state, onQuestionsChanged){
     </div>
   `;
   bindManualForm(slot, "manual", state, onQuestionsChanged, /* clearAfterAdd */ true);
+}
+
+// Crops a rectangular region (in natural-image pixel coordinates) out
+// of an image URL and returns it as a canvas, ready to feed into OCR.
+function cropImageToCanvas(imageUrl, rect){
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(rect.w));
+      canvas.height = Math.max(1, Math.round(rect.h));
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(
+        img,
+        rect.x, rect.y, rect.w, rect.h,
+        0, 0, canvas.width, canvas.height
+      );
+      resolve(canvas);
+    };
+    img.onerror = reject;
+    img.src = imageUrl;
+  });
 }
 
 function manualQuestionFormHtml(ns){

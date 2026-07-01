@@ -409,6 +409,33 @@ table.quiz-table th{
   width:18px; height:18px; font-size:0.7rem; line-height:1;
 }
 
+/* ── Crop tool (drag-select a single question before OCR) ─────────── */
+
+.crop-stage{
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-s);
+  cursor: crosshair;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+.crop-stage img{
+  display: block;
+  max-width: 100%;
+  width: 100%;
+  height: auto;
+  pointer-events: none;
+}
+.crop-selection{
+  position: absolute;
+  border: 2px solid var(--pen-red);
+  background: rgba(179, 38, 30, 0.12);
+  pointer-events: none;
+}
+
 /* ── OCR scratchpad ─────────────────────────────────────────────── */
 
 .ocr-pad{
