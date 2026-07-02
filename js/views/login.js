@@ -33,10 +33,10 @@ function renderLoginView(container){
         <form id="student-login-form">
           <div class="field">
             <label for="s-name">আপনার নাম · Name</label>
-            <input type="text" id="s-name" placeholder="যেমন: তন্ময় সাহা" required />
+            <input type="text" id="s-name" placeholder="Example: Tonoy Saha" required />
           </div>
           <div class="field">
-            <label for="s-roll">রোল / আইডি · Roll or ID</label>
+            <label for="s-roll">Roll or ID</label>
             <input type="text" id="s-roll" placeholder="যেমন: 2014015" required />
           </div>
           <button class="btn btn-block" type="submit">পরীক্ষায় প্রবেশ করুন</button>
