@@ -38,11 +38,13 @@ function renderTopbar(){
     <div class="topbar">
       <div class="brand">
         <span class="mark">Q</span>
-        <strong>MCQ Quiz App</strong>
+        <strong>${t("app_name")}</strong>
       </div>
       <div class="who">
-        <span>${escapeHtml(session?.name || "")} · ${session?.role === "admin" ? "Admin" : "Student"}</span>
-        <button class="linklike" id="logout-btn">লগআউট</button>
+        <button class="linklike" id="theme-toggle-btn" title="${t("theme_toggle")}">${Theme.get() === "dark" ? "☀️" : "🌙"}</button>
+        <button class="linklike" id="lang-toggle-btn">${t("lang_toggle")}</button>
+        <span>${escapeHtml(session?.name || "")} · ${session?.role === "admin" ? t("role_admin") : t("role_student")}</span>
+        <button class="linklike" id="logout-btn">${t("logout")}</button>
       </div>
     </div>
   `;
@@ -53,6 +55,18 @@ function bindTopbarEvents(container){
   if (btn) btn.addEventListener("click", () => {
     Store.logout();
     location.hash = "#/login";
+  });
+
+  const themeBtn = container.querySelector("#theme-toggle-btn");
+  if (themeBtn) themeBtn.addEventListener("click", () => {
+    Theme.toggle();
+    Router.resolve(); // re-render current view so the icon/labels stay in sync
+  });
+
+  const langBtn = container.querySelector("#lang-toggle-btn");
+  if (langBtn) langBtn.addEventListener("click", () => {
+    I18N.toggle();
+    Router.resolve(); // re-render current view with the new language
   });
 }
 

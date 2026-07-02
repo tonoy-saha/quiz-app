@@ -9,33 +9,31 @@ async function renderTakeQuizStatic(container, quizId){
   container.innerHTML = `
     ${renderTopbar()}
     <div class="page">
-      <div class="flex-gap"><span class="spinner" style="border-color: rgba(27,27,31,0.25); border-top-color: var(--ink);"></span> কুইজ লোড হচ্ছে...</div>
+      <div class="flex-gap"><span class="spinner" style="border-color: rgba(27,27,31,0.25); border-top-color: var(--ink);"></span> ${t("quiz_loading")}</div>
     </div>
   `;
   bindTopbarEvents(container);
 
   let quiz;
   try{
-    // Relative path so this works correctly whether the app lives at
-    // the domain root or under a sub-path like /quiz-app/.
     const res = await fetch(`quizzes/${quizId}.json`, { cache: "no-store" });
     if (!res.ok){
       if (res.status === 404){
-        showLoadError(container, "কুইজ ফাইল পাওয়া যায়নি (404)। অ্যাডমিন এখনো quizzes ফোল্ডারে ফাইলটি পুশ করেননি, অথবা লিংকটি ভুল।");
+        showLoadError(container, t("quiz_404"));
       } else {
-        showLoadError(container, `কুইজ লোড করতে সমস্যা হয়েছে (কোড ${res.status})। অ্যাডমিনকে জানান।`);
+        showLoadError(container, t("quiz_load_error", { code: res.status }));
       }
       return;
     }
     quiz = await res.json();
   }catch(err){
     console.error(err);
-    showLoadError(container, "নেটওয়ার্ক সমস্যা — ইন্টারনেট সংযোগ যাচাই করুন।");
+    showLoadError(container, t("quiz_network_error"));
     return;
   }
 
   if (!quiz.questions || quiz.questions.length === 0){
-    showLoadError(container, "এই কুইজে কোনো প্রশ্ন নেই।");
+    showLoadError(container, t("quiz_no_questions"));
     return;
   }
 
@@ -50,13 +48,13 @@ async function renderTakeQuiz(container, fileId){
   container.innerHTML = `
     ${renderTopbar()}
     <div class="page">
-      <div class="flex-gap"><span class="spinner" style="border-color: rgba(27,27,31,0.25); border-top-color: var(--ink);"></span> কুইজ লোড হচ্ছে...</div>
+      <div class="flex-gap"><span class="spinner" style="border-color: rgba(27,27,31,0.25); border-top-color: var(--ink);"></span> ${t("quiz_loading")}</div>
     </div>
   `;
   bindTopbarEvents(container);
 
   if (!CONFIG.GOOGLE_API_KEY || CONFIG.GOOGLE_API_KEY === "PASTE_YOUR_API_KEY_HERE"){
-    showLoadError(container, "অ্যাপ এখনো সম্পূর্ণ কনফিগার করা হয়নি (API key বাকি আছে)। অ্যাডমিনকে জানান।");
+    showLoadError(container, t("quiz_not_configured"));
     return;
   }
 
@@ -65,23 +63,23 @@ async function renderTakeQuiz(container, fileId){
     const res = await fetch(Drive.publicFileUrl(fileId));
     if (!res.ok){
       if (res.status === 403){
-        showLoadError(container, "এই পুরনো ধরনের লিংক আর কাজ করে না (Google Drive সীমাবদ্ধতা)। অ্যাডমিনের কাছ থেকে নতুন লিংক নিন।");
+        showLoadError(container, t("quiz_old_link"));
       } else if (res.status === 404){
-        showLoadError(container, "কুইজ পাওয়া যায়নি (404)। লিংকটি সঠিক কিনা যাচাই করুন।");
+        showLoadError(container, t("quiz_404"));
       } else {
-        showLoadError(container, `কুইজ লোড করতে সমস্যা হয়েছে (কোড ${res.status})। অ্যাডমিনকে জানান।`);
+        showLoadError(container, t("quiz_load_error", { code: res.status }));
       }
       return;
     }
     quiz = await res.json();
   }catch(err){
     console.error(err);
-    showLoadError(container, "নেটওয়ার্ক সমস্যা — ইন্টারনেট সংযোগ যাচাই করুন।");
+    showLoadError(container, t("quiz_network_error"));
     return;
   }
 
   if (!quiz.questions || quiz.questions.length === 0){
-    showLoadError(container, "এই কুইজে কোনো প্রশ্ন নেই।");
+    showLoadError(container, t("quiz_no_questions"));
     return;
   }
 
@@ -90,23 +88,62 @@ async function renderTakeQuiz(container, fileId){
 
 function showLoadError(container, msg){
   const page = container.querySelector(".page");
-  page.innerHTML = `<div class="card"><p>${escapeHtml(msg)}</p><a href="#/student" class="btn btn-outline btn-sm mt-2" style="text-decoration:none; display:inline-flex;">ফিরে যান</a></div>`;
+  page.innerHTML = `<div class="card"><p>${escapeHtml(msg)}</p><a href="#/student" class="btn btn-outline btn-sm mt-2" style="text-decoration:none; display:inline-flex;">${t("quiz_go_back")}</a></div>`;
 }
 
 function startQuizFlow(container, quiz, fileId){
   const session = Store.session;
-  const questions = shuffle([...quiz.questions]);
+
+  // If the quiz has more questions than questionsPerAttempt, draw a
+  // random subset each attempt instead of always showing everything —
+  // makes repeat practice feel fresh from a larger question pool.
+  const pool = shuffle([...quiz.questions]);
+  const poolSize = quiz.questionsPerAttempt && quiz.questionsPerAttempt > 0
+    ? Math.min(quiz.questionsPerAttempt, pool.length)
+    : pool.length;
+  const questions = pool.slice(0, poolSize);
+
   const answers = {}; // questionId -> "A"|"B"|"C"|"D"
   let index = 0;
 
   const page = container.querySelector(".page");
+
+  // ── Timer ──────────────────────────────────────────────────────
+  let timerInterval = null;
+  let secondsLeft = quiz.timeLimitMinutes && quiz.timeLimitMinutes > 0
+    ? quiz.timeLimitMinutes * 60
+    : null;
+
+  function startTimer(){
+    if (secondsLeft === null) return;
+    timerInterval = setInterval(() => {
+      secondsLeft--;
+      updateTimerDisplay();
+      if (secondsLeft <= 0){
+        clearInterval(timerInterval);
+        submitQuiz();
+      }
+    }, 1000);
+  }
+
+  function updateTimerDisplay(){
+    const el = page.querySelector("#quiz-timer");
+    if (!el || secondsLeft === null) return;
+    const m = Math.floor(secondsLeft / 60);
+    const s = secondsLeft % 60;
+    el.textContent = `${m}:${String(s).padStart(2, "0")}`;
+    el.classList.toggle("timer-warn", secondsLeft <= 60);
+  }
 
   function renderQuestion(){
     const q = questions[index];
 
     page.innerHTML = `
       <div class="page-head">
-        <div class="eyebrow">${escapeHtml(quiz.title)}</div>
+        <div class="flex-between">
+          <div class="eyebrow">${escapeHtml(quiz.title)}</div>
+          ${secondsLeft !== null ? `<div class="mono" id="quiz-timer" style="font-size:1.1rem;">--:--</div>` : ""}
+        </div>
         <div class="progress-rail mt-1">
           ${questions.map((qq, i) => `
             <div class="progress-dot ${i === index ? "current" : ""} ${answers[qq.id] ? "answered" : ""}">${i + 1}</div>
@@ -116,7 +153,7 @@ function startQuizFlow(container, quiz, fileId){
 
       <div class="question-sheet">
         <div class="q-meta">
-          <span class="q-counter">প্রশ্ন ${index + 1} / ${questions.length}</span>
+          <span class="q-counter">${t("quiz_question_counter", { current: index + 1, total: questions.length })}</span>
         </div>
         <p class="q-text">${escapeHtml(q.question)}</p>
         <div class="omr-options">
@@ -130,12 +167,14 @@ function startQuizFlow(container, quiz, fileId){
       </div>
 
       <div class="flex-between mt-3">
-        <button class="btn btn-outline" id="prev-btn" ${index === 0 ? "disabled" : ""}>← আগের প্রশ্ন</button>
+        <button class="btn btn-outline" id="prev-btn" ${index === 0 ? "disabled" : ""}>${t("quiz_prev")}</button>
         ${index === questions.length - 1
-          ? `<button class="btn" id="submit-btn">পরীক্ষা জমা দিন</button>`
-          : `<button class="btn" id="next-btn">পরের প্রশ্ন →</button>`}
+          ? `<button class="btn" id="submit-btn">${t("quiz_submit")}</button>`
+          : `<button class="btn" id="next-btn">${t("quiz_next")}</button>`}
       </div>
     `;
+
+    updateTimerDisplay();
 
     page.querySelectorAll(".omr-option").forEach(btn => btn.addEventListener("click", () => {
       answers[q.id] = btn.dataset.key;
@@ -153,14 +192,15 @@ function startQuizFlow(container, quiz, fileId){
     if (submitBtn) submitBtn.addEventListener("click", () => {
       const unanswered = questions.filter(qq => !answers[qq.id]).length;
       if (unanswered > 0){
-        if (!confirm(`${unanswered}টি প্রশ্নের উত্তর দেওয়া হয়নি। তবুও জমা দিতে চান?`)) return;
+        if (!confirm(t("quiz_unanswered_confirm", { count: unanswered }))) return;
       }
       submitQuiz();
     });
   }
 
   function submitQuiz(){
-    const result = gradeQuiz(questions, answers);
+    if (timerInterval) clearInterval(timerInterval);
+    const result = gradeQuiz(questions, answers, quiz.negativeMarkingFraction);
     const fullResult = {
       quizId: fileId,
       quizTitle: quiz.title,
@@ -174,4 +214,5 @@ function startQuizFlow(container, quiz, fileId){
   }
 
   renderQuestion();
+  startTimer();
 }

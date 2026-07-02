@@ -32,6 +32,24 @@
   --max-width: 880px;
 }
 
+/* Dark theme — same "answer sheet" texture, read at night. Same
+   variable names so every existing rule below works unchanged; only
+   the values differ. Toggled via <html data-theme="dark">. */
+html[data-theme="dark"]{
+  --paper:        #1C1B18;
+  --paper-dim:    #262420;
+  --ink:          #EDE8DC;
+  --ink-soft:     #B4AC98;
+  --rule:         #3A362E;
+  --rule-strong:  #4F493D;
+  --pen-red:      #E5756B;
+  --pen-red-dim:  #402420;
+  --sage:         #86B695;
+  --sage-dim:     #223228;
+  --gold:         #D9B872;
+  --gold-dim:     #362B16;
+}
+
 *{ box-sizing: border-box; }
 html, body{ margin:0; padding:0; }
 
@@ -434,6 +452,11 @@ table.quiz-table th{
   border: 2px solid var(--pen-red);
   background: rgba(179, 38, 30, 0.12);
   pointer-events: none;
+}
+
+#quiz-timer.timer-warn{
+  color: var(--pen-red);
+  font-weight: 600;
 }
 
 /* ── OCR scratchpad ─────────────────────────────────────────────── */

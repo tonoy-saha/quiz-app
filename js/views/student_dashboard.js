@@ -10,20 +10,20 @@ function renderStudentDashboard(container){
     ${renderTopbar()}
     <div class="page">
       <div class="page-head">
-        <div class="eyebrow">শিক্ষার্থী</div>
-        <h1>স্বাগতম, ${escapeHtml(session?.name || "")}</h1>
-        <p class="roll-badge mt-1">রোল/আইডি: ${escapeHtml(session?.rollId || "")}</p>
+        <div class="eyebrow">${t("student_eyebrow")}</div>
+        <h1>${t("student_welcome", { name: escapeHtml(session?.name || "") })}</h1>
+        <p class="roll-badge mt-1">${t("student_roll_badge", { roll: escapeHtml(session?.rollId || "") })}</p>
       </div>
 
       <div class="card">
-        <p>পরীক্ষা শুরু করতে আপনার শিক্ষক/অ্যাডমিনের পাঠানো কুইজ লিংকে ক্লিক করুন।</p>
-        <p class="text-soft text-sm mt-1">লিংক না থাকলে নিচে কুইজ আইডি/লিংক পেস্ট করুন:</p>
+        <p>${t("student_instructions")}</p>
+        <p class="text-soft text-sm mt-1">${t("student_paste_hint")}</p>
         <div class="field-row mt-2" style="align-items:flex-end;">
           <div class="field" style="margin-bottom:0;">
-            <label for="quiz-link-input">কুইজ লিংক বা আইডি</label>
-            <input type="text" id="quiz-link-input" placeholder="https://.../#/student/take-static/xxxxx বা শুধু xxxxx" />
+            <label for="quiz-link-input">${t("student_link_label")}</label>
+            <input type="text" id="quiz-link-input" placeholder="https://.../#/student/take-static/xxxxx" />
           </div>
-          <button class="btn" id="go-to-quiz-btn">পরীক্ষায় যান</button>
+          <button class="btn" id="go-to-quiz-btn">${t("student_go_btn")}</button>
         </div>
       </div>
     </div>
@@ -33,7 +33,7 @@ function renderStudentDashboard(container){
 
   container.querySelector("#go-to-quiz-btn").addEventListener("click", () => {
     const raw = container.querySelector("#quiz-link-input").value.trim();
-    if (!raw){ toast("লিংক বা আইডি দিন।", "error"); return; }
+    if (!raw){ toast(t("student_need_link"), "error"); return; }
 
     const staticMatch = raw.match(/take-static\/([^/?#]+)/);
     if (staticMatch){

@@ -4,14 +4,20 @@
 // (see drive.js) — this is just session/UI state.
 
 const Store = {
+  // Both admin and student sessions live in sessionStorage only, so
+  // closing the tab/browser always logs everyone out and the app opens
+  // fresh at the login screen next time — matches normal expectations
+  // (and avoids a shared/lab computer showing a previous student's
+  // login on reopen). Within the same open tab, session persists
+  // normally across hash navigation.
   get session(){
     try{
-      return JSON.parse(localStorage.getItem(CONFIG.LS_SESSION) || "null");
+      return JSON.parse(sessionStorage.getItem(CONFIG.LS_SESSION) || "null");
     }catch(e){ return null; }
   },
   set session(val){
-    if (val === null) localStorage.removeItem(CONFIG.LS_SESSION);
-    else localStorage.setItem(CONFIG.LS_SESSION, JSON.stringify(val));
+    if (val === null) sessionStorage.removeItem(CONFIG.LS_SESSION);
+    else sessionStorage.setItem(CONFIG.LS_SESSION, JSON.stringify(val));
   },
 
   loginAdmin(){

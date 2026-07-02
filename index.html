@@ -3,7 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Quizzy</title>
+<title>প্রশ্নপত্র — MCQ Quiz</title>
+
+<!-- Apply saved theme before first paint, to avoid a flash of the
+     wrong theme when the page loads. -->
+<script>
+  (function(){
+    try{
+      var t = localStorage.getItem("quizapp_theme");
+      if (t === "dark") document.documentElement.setAttribute("data-theme", "dark");
+    }catch(e){}
+  })();
+</script>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -24,6 +35,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.0/tesseract.min.js"></script>
 
 <script src="js/config.js"></script>
+<script src="js/theme.js"></script>
+<script src="js/i18n.js"></script>
 <script src="js/store.js"></script>
 <script src="js/drive.js"></script>
 <script src="js/github.js"></script>

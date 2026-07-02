@@ -7,13 +7,15 @@ function renderResults(container){
     container.innerHTML = `
       ${renderTopbar()}
       <div class="page">
-        <div class="card"><p>কোনো রেজাল্ট পাওয়া যায়নি।</p>
-        <a href="#/student" class="btn btn-outline btn-sm mt-2" style="text-decoration:none; display:inline-flex;">ড্যাশবোর্ডে ফিরে যান</a></div>
+        <div class="card"><p>${t("results_none")}</p>
+        <a href="#/student" class="btn btn-outline btn-sm mt-2" style="text-decoration:none; display:inline-flex;">${t("results_back_dash")}</a></div>
       </div>
     `;
     bindTopbarEvents(container);
     return;
   }
+
+  const hasNegativeMarking = result.negativeMarkingFraction && result.negativeMarkingFraction > 0;
 
   container.innerHTML = `
     ${renderTopbar()}
@@ -26,18 +28,19 @@ function renderResults(container){
             <span class="small">SCORE</span>
           </div>
         </div>
-        <p class="mono">${result.correct} / ${result.total} সঠিক</p>
-        <p class="roll-badge mt-1">${escapeHtml(result.name)} · রোল: ${escapeHtml(result.rollId)}</p>
+        <p class="mono">${t("results_correct_of", { correct: result.correct, total: result.total })}</p>
+        ${hasNegativeMarking ? `<p class="text-soft text-sm mono mt-1">${result.marks} ${I18N.get() === "bn" ? "নম্বর (নেগেটিভ মার্কিং প্রয়োগসহ)" : "marks (after negative marking)"}</p>` : ""}
+        <p class="roll-badge mt-1">${t("results_roll_line", { name: escapeHtml(result.name), roll: escapeHtml(result.rollId) })}</p>
       </div>
 
       <div class="flex-gap mt-3 mb-3" style="justify-content:center;">
-        <button class="btn" id="download-result-btn">রেজাল্ট ডাউনলোড করুন</button>
-        <a href="#/student" class="btn btn-outline" style="text-decoration:none; display:inline-flex;">ড্যাশবোর্ডে ফিরে যান</a>
+        <button class="btn" id="download-result-btn">${t("results_download_btn")}</button>
+        <a href="#/student" class="btn btn-outline" style="text-decoration:none; display:inline-flex;">${t("results_back_dash")}</a>
       </div>
 
       <hr class="tear-line" />
 
-      <h2 class="mb-2 mt-2">উত্তরপত্র পর্যালোচনা</h2>
+      <h2 class="mb-2 mt-2">${t("results_review_title")}</h2>
       <div id="review-list"></div>
     </div>
   `;
@@ -48,8 +51,8 @@ function renderResults(container){
   reviewList.innerHTML = result.breakdown.map((b, i) => `
     <div class="review-item ${b.isCorrect ? "is-correct" : "is-wrong"}">
       <div class="flex-between">
-        <span class="eyebrow">প্রশ্ন ${i + 1}</span>
-        <span class="review-tag">${b.isCorrect ? "✓ সঠিক" : "✕ ভুল"}</span>
+        <span class="eyebrow">${t("results_question", { n: i + 1 })}</span>
+        <span class="review-tag">${b.isCorrect ? t("results_correct_tag") : t("results_wrong_tag")}</span>
       </div>
       <p class="q-text" style="font-size:0.96rem; margin: 6px 0 10px;">${escapeHtml(b.question)}</p>
       <div class="mini-options">
@@ -60,8 +63,8 @@ function renderResults(container){
           return `
             <div class="mini-option ${cls}">
               <strong>${k}.</strong> ${escapeHtml(b.options[k] || "")}
-              ${k === b.correctAnswer ? `<span class="ans-tag">✓ সঠিক উত্তর</span>` : ""}
-              ${k === b.given && k !== b.correctAnswer ? `<span class="ans-tag wrong">আপনার উত্তর</span>` : ""}
+              ${k === b.correctAnswer ? `<span class="ans-tag">${t("results_correct_ans")}</span>` : ""}
+              ${k === b.given && k !== b.correctAnswer ? `<span class="ans-tag wrong">${t("results_your_ans")}</span>` : ""}
             </div>
           `;
         }).join("")}
@@ -79,6 +82,6 @@ function renderResults(container){
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
-    toast("রেজাল্ট ফাইল ডাউনলোড হয়েছে। এটি আপনার শিক্ষক/অ্যাডমিনকে পাঠান।", "success");
+    toast(t("results_downloaded"), "success");
   });
 }

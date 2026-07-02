@@ -6,21 +6,34 @@ function renderLoginView(container){
   container.innerHTML = `
     <div class="auth-wrap">
       <div class="auth-card">
+        <div class="flex-between mb-2">
+          <button class="linklike" id="theme-toggle-btn" title="${t("theme_toggle")}">${Theme.get() === "dark" ? "☀️" : "🌙"}</button>
+          <button class="linklike" id="lang-toggle-btn">${t("lang_toggle")}</button>
+        </div>
         <div class="page-head" style="text-align:center;">
-          <div class="eyebrow">প্রশ্নপত্র ০১</div>
-          <h1>MCQ পরীক্ষা প্রোগ্রাম</h1>
-          <p class="text-soft text-sm mt-1">ছবি থেকে প্রশ্ন তৈরি করুন, শিক্ষার্থীদের পরীক্ষা নিন</p>
+          <div class="eyebrow">${t("login_eyebrow")}</div>
+          <h1>${t("login_title")}</h1>
+          <p class="text-soft text-sm mt-1">${t("login_subtitle")}</p>
         </div>
 
         <div class="role-toggle">
-          <button data-role="student" class="active">শিক্ষার্থী · Student</button>
-          <button data-role="admin">অ্যাডমিন · Admin</button>
+          <button data-role="student" class="active">${t("login_role_student")}</button>
+          <button data-role="admin">${t("login_role_admin")}</button>
         </div>
 
         <div id="login-form-slot"></div>
       </div>
     </div>
   `;
+
+  container.querySelector("#theme-toggle-btn").addEventListener("click", () => {
+    Theme.toggle();
+    renderLoginView(container);
+  });
+  container.querySelector("#lang-toggle-btn").addEventListener("click", () => {
+    I18N.toggle();
+    renderLoginView(container);
+  });
 
   const slot = container.querySelector("#login-form-slot");
   const toggleBtns = container.querySelectorAll(".role-toggle button");
@@ -32,14 +45,14 @@ function renderLoginView(container){
       slot.innerHTML = `
         <form id="student-login-form">
           <div class="field">
-            <label for="s-name">আপনার নাম · Name</label>
-            <input type="text" id="s-name" placeholder="Example: Tonoy Saha" required />
+            <label for="s-name">${t("login_name_label")}</label>
+            <input type="text" id="s-name" placeholder="${t("login_name_ph")}" required />
           </div>
           <div class="field">
-            <label for="s-roll">Roll or ID</label>
-            <input type="text" id="s-roll" placeholder="যেমন: 2014015" required />
+            <label for="s-roll">${t("login_roll_label")}</label>
+            <input type="text" id="s-roll" placeholder="${t("login_roll_ph")}" required />
           </div>
-          <button class="btn btn-block" type="submit">পরীক্ষায় প্রবেশ করুন</button>
+          <button class="btn btn-block" type="submit">${t("login_enter_exam")}</button>
         </form>
       `;
       slot.querySelector("#student-login-form").addEventListener("submit", (e) => {
@@ -54,18 +67,18 @@ function renderLoginView(container){
       slot.innerHTML = `
         <form id="admin-login-form">
           <div class="field">
-            <label for="a-pass">অ্যাডমিন পাসওয়ার্ড · Admin password</label>
+            <label for="a-pass">${t("login_admin_pass")}</label>
             <input type="password" id="a-pass" placeholder="••••••••" required />
           </div>
-          <button class="btn btn-block" type="submit">লগইন করুন</button>
-          <p class="help-text">এই পাসওয়ার্ড কোডে নির্ধারিত — config.js ফাইলে পরিবর্তন করা যায়।</p>
+          <button class="btn btn-block" type="submit">${t("login_btn")}</button>
+          <p class="help-text">${t("login_pass_help")}</p>
         </form>
       `;
       slot.querySelector("#admin-login-form").addEventListener("submit", (e) => {
         e.preventDefault();
         const pass = slot.querySelector("#a-pass").value;
         if (pass !== CONFIG.ADMIN_PASSWORD){
-          toast("পাসওয়ার্ড সঠিক নয়।", "error");
+          toast(t("login_wrong_pass"), "error");
           return;
         }
         Store.loginAdmin();

@@ -26,6 +26,27 @@ function renderCreateQuiz(container){
         <input type="text" id="quiz-title" placeholder="যেমন: বাংলা — জাতীয় বিশ্ববিদ্যালয় ভর্তি ২০১৪-১৫" />
       </div>
 
+      <div class="field-row">
+        <div class="field">
+          <label for="quiz-negative-marking">নেগেটিভ মার্কিং (ঐচ্ছিক)</label>
+          <select id="quiz-negative-marking">
+            <option value="0">নেই</option>
+            <option value="0.25">১/৪ (৪ ভুলে ১ নম্বর কাটা)</option>
+            <option value="0.33">১/৩ (৩ ভুলে ১ নম্বর কাটা)</option>
+            <option value="0.5">১/২ (২ ভুলে ১ নম্বর কাটা)</option>
+            <option value="1">১/১ (প্রতি ভুলে ১ নম্বর কাটা)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="quiz-time-limit">সময়সীমা মিনিটে (ঐচ্ছিক, ০ = সীমাহীন)</label>
+          <input type="number" id="quiz-time-limit" min="0" placeholder="০" />
+        </div>
+      </div>
+      <div class="field">
+        <label for="quiz-questions-per-attempt">প্রতি পরীক্ষায় কতটি প্রশ্ন দেখাবে (ঐচ্ছিক, খালি = সবগুলো)</label>
+        <input type="number" id="quiz-questions-per-attempt" min="1" placeholder="যেমন: ২৫ (মোট প্রশ্ন থেকে এলোমেলোভাবে বাছাই হবে)" />
+      </div>
+
       <div class="role-toggle" style="max-width:620px;">
         <button data-mode="bulk" class="active">বাল্ক পেস্ট (প্রস্তাবিত)</button>
         <button data-mode="image">ছবি থেকে (OCR)</button>
@@ -128,11 +149,18 @@ function renderCreateQuiz(container){
     btn.disabled = true;
     statusEl.textContent = "সেভ হচ্ছে...";
 
+    const negMarking = parseFloat(container.querySelector("#quiz-negative-marking").value) || 0;
+    const timeLimit = parseInt(container.querySelector("#quiz-time-limit").value, 10) || 0;
+    const perAttempt = parseInt(container.querySelector("#quiz-questions-per-attempt").value, 10) || 0;
+
     const quiz = {
       id: uid("quiz"),
       title: state.title,
       createdAt: new Date().toISOString(),
       questions: state.questions,
+      negativeMarkingFraction: negMarking,
+      timeLimitMinutes: timeLimit,
+      questionsPerAttempt: perAttempt,
     };
 
     try{
