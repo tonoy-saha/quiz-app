@@ -16,6 +16,12 @@ function renderStudentDashboard(container){
       </div>
 
       <div class="card mb-2">
+        <h3 style="margin:0 0 6px;">${t("self_practice_title")}</h3>
+        <p class="text-soft text-sm">${t("self_practice_desc")}</p>
+        <a href="#/student/self-practice" class="btn mt-1" style="text-decoration:none; display:inline-flex;">${t("self_practice_btn")}</a>
+      </div>
+
+      <div class="card mb-2">
         <h3 style="margin:0 0 6px;">${t("quiz_bank_title")}</h3>
         <p class="text-soft text-sm">${t("quiz_bank_desc")}</p>
         <a href="#/student/bank" class="btn mt-1" style="text-decoration:none; display:inline-flex;">${t("quiz_bank_btn")}</a>

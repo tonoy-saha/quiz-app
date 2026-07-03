@@ -67,6 +67,9 @@ const TRANSLATIONS = {
   quiz_bank_title:     { bn: "কুইজ ব্যাংক",                   en: "Quiz Bank" },
   quiz_bank_desc:      { bn: "নির্দিষ্ট লিংক ছাড়াই বিষয়ভিত্তিক অনুশীলন পরীক্ষা দিন।", en: "Practice by topic, no link needed." },
   quiz_bank_btn:       { bn: "কুইজ ব্যাংকে যান",               en: "Go to Quiz Bank" },
+  self_practice_title: { bn: "নিজে প্রশ্ন যুক্ত করুন",           en: "Add Your Own Questions" },
+  self_practice_desc:  { bn: "নিজের বই/নোটের ছবি বা টেক্সট দিয়ে এখনই একটি অনুশীলন পরীক্ষা তৈরি করুন।", en: "Build an instant practice quiz from your own book/notes." },
+  self_practice_btn:   { bn: "শুরু করুন",                       en: "Get Started" },
 
   // Take quiz
   quiz_loading:        { bn: "কুইজ লোড হচ্ছে...",             en: "Loading quiz..." },

@@ -24,6 +24,7 @@ Router.add("/admin/create", () => requireRole("admin", {}, renderCreateQuiz));
 Router.add("/admin/manage", () => requireRole("admin", {}, renderManageQuizzes));
 
 Router.add("/student", () => requireRole("student", {}, renderStudentDashboard));
+Router.add("/student/self-practice", () => requireRole("student", {}, renderSelfPractice));
 Router.add("/student/bank", () => requireRole("student", {}, renderQuizBank));
 Router.add("/student/take/:fileId", (params) =>
   requireRole("student", params, (el) => renderTakeQuiz(el, params.fileId))
