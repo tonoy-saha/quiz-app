@@ -7,22 +7,42 @@
 //
 // This is a genuinely free, permanent, no-credit-card tier — separate
 // from Google Cloud Vision / Firebase, which do require billing. Get a
-// key at https://aistudio.google.com (sign in → "Get API key").
+// key at https://aistudio.google.com (sign in → "Create API key").
 //
 // Honest tradeoff: free-tier Gemini usage may be reviewed/used by
 // Google to improve their products (unlike a paid tier). Fine for
 // question-bank photos; worth knowing regardless.
 //
-// The key is stored only in this browser's localStorage — entered via
-// a small inline form, never written into any committed file (same
-// reasoning as the GitHub token: avoids it ever landing in git
-// history, and each person who wants this feature sets up their own
-// free key rather than sharing one baked into the source).
+// Two ways a key can be supplied:
+//   1. CONFIG.GEMINI_API_KEY in config.js — a shared key the admin
+//      provides so every student gets one-click extraction with zero
+//      setup. This key IS visible in the app's public source (same
+//      tradeoff as the Google Drive API key), which is why it should
+//      be restricted to this site's domain in Google Cloud Console
+//      (Credentials → the key → Application restrictions → HTTP
+//      referrers → add your github.io URL). All students share this
+//      key's daily quota (1,500 requests/day total).
+//   2. A personal key a student pastes in themselves, stored only in
+//      their own browser's localStorage — takes priority over the
+//      shared key if set, so a student can opt to use their own quota
+//      instead of the shared pool.
 
 const GeminiOCR = {
   _keyStorageKey: "quizapp_gemini_key",
 
-  getKey(){ return localStorage.getItem(this._keyStorageKey) || ""; },
+  getKey(){
+    const personal = localStorage.getItem(this._keyStorageKey);
+    if (personal) return personal;
+    if (CONFIG.GEMINI_API_KEY && CONFIG.GEMINI_API_KEY !== "PASTE_YOUR_GEMINI_API_KEY_HERE"){
+      return CONFIG.GEMINI_API_KEY;
+    }
+    return "";
+  },
+  usingSharedKey(){
+    return !localStorage.getItem(this._keyStorageKey)
+      && !!CONFIG.GEMINI_API_KEY
+      && CONFIG.GEMINI_API_KEY !== "PASTE_YOUR_GEMINI_API_KEY_HERE";
+  },
   setKey(k){ localStorage.setItem(this._keyStorageKey, k.trim()); },
   clearKey(){ localStorage.removeItem(this._keyStorageKey); },
   isConfigured(){ return !!this.getKey(); },

@@ -38,4 +38,6 @@ const CONFIG = {
   // LocalStorage keys
   LS_SESSION: "quizapp_session",
   LS_DRIVE_TOKEN: "quizapp_drive_token",
+
+  GEMINI_API_KEY: "AQ.Ab8RN6K37ukedx8J2tntfskhRKZzCnb9lO_TByETj37tWQmWnw",
 };

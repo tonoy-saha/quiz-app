@@ -496,8 +496,8 @@ function renderImageMode(slot, state, onQuestionsChanged){
 // already stored) or a small inline key-setup form (if not). Runs
 // entirely client-side; the key never leaves this browser's
 // localStorage / never gets committed anywhere.
-function renderGeminiButton(el, item, state, onQuestionsChanged){
-  if (!GeminiOCR.isConfigured()){
+function renderGeminiButton(el, item, state, onQuestionsChanged, forceKeyEntry){
+  if (!GeminiOCR.isConfigured() || forceKeyEntry){
     el.innerHTML = `
       <div class="field-row" style="align-items:flex-end;">
         <div class="field" style="margin-bottom:0; flex:1;">
@@ -522,15 +522,26 @@ function renderGeminiButton(el, item, state, onQuestionsChanged){
     return;
   }
 
+  const usingShared = GeminiOCR.usingSharedKey();
+
   el.innerHTML = `
     <div class="flex-gap">
       <button class="btn" id="run-gemini-btn">🤖 AI দিয়ে সব প্রশ্ন বের করুন</button>
-      <button class="linklike-btn" id="forget-gemini-key">key মুছুন</button>
+      ${usingShared
+        ? `<button class="linklike-btn" id="use-own-key-btn">নিজের key ব্যবহার করুন</button>`
+        : `<button class="linklike-btn" id="forget-gemini-key">key মুছুন</button>`}
     </div>
+    ${usingShared ? `<p class="text-soft text-sm mt-1">সবার জন্য একটি শেয়ার করা key ব্যবহার হচ্ছে (দৈনিক সীমা সবার মধ্যে ভাগ হয়)।</p>` : ""}
     <div id="gemini-status" class="mt-1"></div>
   `;
 
-  el.querySelector("#forget-gemini-key").addEventListener("click", () => {
+  const useOwnBtn = el.querySelector("#use-own-key-btn");
+  if (useOwnBtn) useOwnBtn.addEventListener("click", () => {
+    renderGeminiButton(el, item, state, onQuestionsChanged, /* forceKeyEntry */ true);
+  });
+
+  const forgetBtn = el.querySelector("#forget-gemini-key");
+  if (forgetBtn) forgetBtn.addEventListener("click", () => {
     GeminiOCR.clearKey();
     renderGeminiButton(el, item, state, onQuestionsChanged);
   });
@@ -562,9 +573,14 @@ function renderGeminiButton(el, item, state, onQuestionsChanged){
       console.error(err);
       const msg = String(err?.message || "");
       if (msg.includes("GEMINI_KEY_INVALID")){
-        status.innerHTML = `<p class="text-sm" style="color: var(--pen-red);">API key ভুল বা কাজ করছে না। নতুন key দিয়ে আবার চেষ্টা করুন।</p>`;
-        GeminiOCR.clearKey();
-        renderGeminiButton(el, item, state, onQuestionsChanged);
+        if (GeminiOCR.usingSharedKey()){
+          status.innerHTML = `<p class="text-sm" style="color: var(--pen-red);">শেয়ার করা API key কাজ করছে না বা দৈনিক সীমা শেষ হয়ে গেছে। অ্যাডমিনকে জানান, অথবা নিচে নিজের personal key ব্যবহার করুন।</p>`;
+        } else {
+          status.innerHTML = `<p class="text-sm" style="color: var(--pen-red);">API key ভুল বা কাজ করছে না। নতুন key দিয়ে আবার চেষ্টা করুন।</p>`;
+          GeminiOCR.clearKey();
+          renderGeminiButton(el, item, state, onQuestionsChanged);
+        }
+        btn.disabled = false;
         return;
       }
       status.innerHTML = `<p class="text-sm" style="color: var(--pen-red);">সমস্যা হয়েছে (${msg || "unknown"})। আবার চেষ্টা করুন।</p>`;
