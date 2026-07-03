@@ -39,5 +39,5 @@ const CONFIG = {
   LS_SESSION: "quizapp_session",
   LS_DRIVE_TOKEN: "quizapp_drive_token",
 
-  GEMINI_API_KEY: "AQ.Ab8RN6K37ukedx8J2tntfskhRKZzCnb9lO_TByETj37tWQmWnw",
+  GEMINI_API_KEY: "AQ.Ab8RN6LtaDijm21x-2o-HZh9njQJd9wfkYX9zo-G48mlAuTTag",
 };
