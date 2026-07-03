@@ -107,6 +107,8 @@ async function loadAndRender(body){
     try{
       const { _driveFileId, ...publicQuiz } = quiz;
       await GitHubPublish.publishJson(`quizzes/${quiz.id}.json`, publicQuiz, `Republish quiz: ${quiz.title}`);
+      try{ await QuizBank.upsertEntry(publicQuiz); }
+      catch(e){ console.error("Bank index sync failed (non-fatal):", e); }
       toast("পুনরায় পাবলিশ হয়েছে।", "success");
     }catch(err){
       console.error(err);
@@ -126,6 +128,7 @@ async function loadAndRender(body){
       if (GitHubPublish.isConfigured()){
         try{ await GitHubPublish.deleteFile(`quizzes/${quiz.id}.json`, `Delete quiz: ${quiz.title}`); }
         catch(e){ console.error("GitHub delete failed (non-fatal):", e); }
+        await QuizBank.removeEntry(quiz.id, quiz.title);
       }
       toast("কুইজ মুছে ফেলা হয়েছে।", "success");
       loadAndRender(body);

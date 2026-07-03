@@ -99,6 +99,21 @@ const GitHubPublish = {
     return res.json();
   },
 
+  // Fetches and JSON-parses a file's current content (admin-side, via
+  // authenticated GitHub API — not the public GitHub Pages URL). Used
+  // to read-modify-write shared files like the quiz bank index.
+  async getFileContent(path){
+    const res = await fetch(`${this.apiBase()}/${path}`, { headers: this.headers() });
+    if (res.status === 404) return null;
+    if (!res.ok){
+      const body = await res.text().catch(() => "");
+      console.error("getFileContent failed:", res.status, body);
+      throw new Error("GITHUB_FETCH_FAILED:" + res.status);
+    }
+    const data = await res.json();
+    return JSON.parse(base64ToUtf8(data.content.replace(/\n/g, "")));
+  },
+
   async deleteFile(path, message){
     if (!this.isConfigured()) throw new Error("GITHUB_TOKEN_MISSING");
     const sha = await this.getFileSha(path);
@@ -122,4 +137,11 @@ function utf8ToBase64(str){
   let binary = "";
   bytes.forEach(b => { binary += String.fromCharCode(b); });
   return btoa(binary);
+}
+
+function base64ToUtf8(b64){
+  const binary = atob(b64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return new TextDecoder().decode(bytes);
 }

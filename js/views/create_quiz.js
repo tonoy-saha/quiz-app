@@ -26,6 +26,11 @@ function renderCreateQuiz(container){
         <input type="text" id="quiz-title" placeholder="যেমন: বাংলা — জাতীয় বিশ্ববিদ্যালয় ভর্তি ২০১৪-১৫" />
       </div>
 
+      <div class="field">
+        <label for="quiz-topic">বিষয় (কুইজ ব্যাংকে এই বিষয়ের অধীনে দেখাবে)</label>
+        <input type="text" id="quiz-topic" placeholder="যেমন: বাংলা, সাধারণ জ্ঞান, পদার্থবিজ্ঞান — খালি রাখলে 'সাধারণ' হবে" />
+      </div>
+
       <div class="field-row">
         <div class="field">
           <label for="quiz-negative-marking">নেগেটিভ মার্কিং (ঐচ্ছিক)</label>
@@ -152,10 +157,12 @@ function renderCreateQuiz(container){
     const negMarking = parseFloat(container.querySelector("#quiz-negative-marking").value) || 0;
     const timeLimit = parseInt(container.querySelector("#quiz-time-limit").value, 10) || 0;
     const perAttempt = parseInt(container.querySelector("#quiz-questions-per-attempt").value, 10) || 0;
+    const topic = container.querySelector("#quiz-topic").value.trim() || "সাধারণ";
 
     const quiz = {
       id: uid("quiz"),
       title: state.title,
+      topic,
       createdAt: new Date().toISOString(),
       questions: state.questions,
       negativeMarkingFraction: negMarking,
@@ -167,6 +174,15 @@ function renderCreateQuiz(container){
       await Drive.saveQuiz(quiz);
       statusEl.textContent = "পাবলিশ হচ্ছে...";
       await GitHubPublish.publishJson(`quizzes/${quiz.id}.json`, quiz, `Publish quiz: ${quiz.title}`);
+      statusEl.textContent = "কুইজ ব্যাংক আপডেট হচ্ছে...";
+      try{
+        await QuizBank.upsertEntry(quiz);
+      }catch(bankErr){
+        // Non-fatal — the quiz itself published fine, only the browsable
+        // bank listing failed. Direct link still works either way.
+        console.error("Quiz bank index update failed:", bankErr);
+        toast("কুইজ পাবলিশ হয়েছে, তবে কুইজ ব্যাংক তালিকা আপডেট করা যায়নি।", "error");
+      }
       toast("কুইজ পাবলিশ হয়েছে! ১-২ মিনিটের মধ্যে লিংকটি কাজ করবে।", "success");
       showPublishSuccess(quiz);
     }catch(err){

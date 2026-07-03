@@ -15,6 +15,12 @@ function renderStudentDashboard(container){
         <p class="roll-badge mt-1">${t("student_roll_badge", { roll: escapeHtml(session?.rollId || "") })}</p>
       </div>
 
+      <div class="card mb-2">
+        <h3 style="margin:0 0 6px;">${t("quiz_bank_title")}</h3>
+        <p class="text-soft text-sm">${t("quiz_bank_desc")}</p>
+        <a href="#/student/bank" class="btn mt-1" style="text-decoration:none; display:inline-flex;">${t("quiz_bank_btn")}</a>
+      </div>
+
       <div class="card">
         <p>${t("student_instructions")}</p>
         <p class="text-soft text-sm mt-1">${t("student_paste_hint")}</p>

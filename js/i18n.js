@@ -64,6 +64,9 @@ const TRANSLATIONS = {
   student_link_label:  { bn: "কুইজ লিংক বা আইডি",            en: "Quiz link or ID" },
   student_go_btn:      { bn: "পরীক্ষায় যান",                 en: "Go to exam" },
   student_need_link:   { bn: "লিংক বা আইডি দিন।",            en: "Please enter a link or ID." },
+  quiz_bank_title:     { bn: "কুইজ ব্যাংক",                   en: "Quiz Bank" },
+  quiz_bank_desc:      { bn: "নির্দিষ্ট লিংক ছাড়াই বিষয়ভিত্তিক অনুশীলন পরীক্ষা দিন।", en: "Practice by topic, no link needed." },
+  quiz_bank_btn:       { bn: "কুইজ ব্যাংকে যান",               en: "Go to Quiz Bank" },
 
   // Take quiz
   quiz_loading:        { bn: "কুইজ লোড হচ্ছে...",             en: "Loading quiz..." },
