@@ -356,7 +356,17 @@ function renderImageMode(slot, state, onQuestionsChanged){
     resultSlot.innerHTML = `
       <div class="card">
         <div class="flex-between">
-          <span class="eyebrow">একটি প্রশ্ন নির্বাচন করুন</span>
+          <span class="eyebrow">AI দিয়ে বের করুন (সুপারিশকৃত)</span>
+        </div>
+        <p class="help-text mt-1">
+          Gemini AI পুরো পৃষ্ঠা একবারে পড়ে সব প্রশ্ন বের করে দেবে — ক্রপ করার দরকার নেই, এবং ঘন/জলছাপযুক্ত পৃষ্ঠায়ও ব্রাউজার OCR-এর চেয়ে অনেক বেশি নির্ভুল।
+        </p>
+        <div id="gemini-slot" class="mt-2"></div>
+
+        <hr class="tear-line" style="margin:18px 0;" />
+
+        <div class="flex-between">
+          <span class="eyebrow">অথবা: ব্রাউজার OCR (ক্রপ করে)</span>
         </div>
         <p class="help-text mt-1">
           ছবির উপর টেনে শুধু একটি প্রশ্ন (প্রশ্ন + ৪টি অপশন) নির্বাচন করুন — পুরো পৃষ্ঠার বদলে একটি প্রশ্নে OCR চালালে ফলাফল অনেক বেশি নির্ভুল হয়।
@@ -366,11 +376,13 @@ function renderImageMode(slot, state, onQuestionsChanged){
           <div class="crop-selection" id="crop-selection" hidden></div>
         </div>
         <div class="flex-gap mt-2">
-          <button class="btn" id="extract-selection-btn" disabled>নির্বাচিত অংশ থেকে বের করুন</button>
-          <button class="btn btn-outline" id="extract-whole-btn">পুরো ছবি থেকে বের করুন</button>
+          <button class="btn btn-outline" id="extract-selection-btn" disabled>নির্বাচিত অংশ থেকে বের করুন</button>
+          <button class="btn btn-outline" id="extract-whole-btn">পুরো ছবি থেকে বের করুন (OCR)</button>
         </div>
       </div>
     `;
+
+    renderGeminiButton(resultSlot.querySelector("#gemini-slot"), item, state, onQuestionsChanged);
 
     const stage = resultSlot.querySelector("#crop-stage");
     const imgEl = resultSlot.querySelector("#crop-img");
@@ -478,6 +490,88 @@ function renderImageMode(slot, state, onQuestionsChanged){
     `;
     bindManualForm(resultSlot, "from-ocr", state, onQuestionsChanged, /* clearAfterAdd */ false);
   }
+}
+
+// Renders either the "extract with AI" button (if a Gemini key is
+// already stored) or a small inline key-setup form (if not). Runs
+// entirely client-side; the key never leaves this browser's
+// localStorage / never gets committed anywhere.
+function renderGeminiButton(el, item, state, onQuestionsChanged){
+  if (!GeminiOCR.isConfigured()){
+    el.innerHTML = `
+      <div class="field-row" style="align-items:flex-end;">
+        <div class="field" style="margin-bottom:0; flex:1;">
+          <label for="gemini-key-input">Gemini API Key (একবার সেটআপ)</label>
+          <input type="password" id="gemini-key-input" placeholder="AIza..." autocomplete="off" />
+        </div>
+        <button class="btn" id="save-gemini-key-btn">সেভ করে বের করুন</button>
+      </div>
+      <p class="text-soft text-sm mt-1">
+        সম্পূর্ণ বিনামূল্যে, কোনো কার্ড লাগে না। নতুন key বানাতে
+        <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">এখানে যান</a>
+        (Google অ্যাকাউন্ট দিয়ে সাইন ইন করুন → "Create API key")। শুধু এই ব্রাউজারে সংরক্ষিত হয়।
+      </p>
+    `;
+    el.querySelector("#save-gemini-key-btn").addEventListener("click", () => {
+      const key = el.querySelector("#gemini-key-input").value.trim();
+      if (!key){ toast("API key দিন।", "error"); return; }
+      GeminiOCR.setKey(key);
+      renderGeminiButton(el, item, state, onQuestionsChanged);
+      el.querySelector("#run-gemini-btn")?.click();
+    });
+    return;
+  }
+
+  el.innerHTML = `
+    <div class="flex-gap">
+      <button class="btn" id="run-gemini-btn">🤖 AI দিয়ে সব প্রশ্ন বের করুন</button>
+      <button class="linklike-btn" id="forget-gemini-key">key মুছুন</button>
+    </div>
+    <div id="gemini-status" class="mt-1"></div>
+  `;
+
+  el.querySelector("#forget-gemini-key").addEventListener("click", () => {
+    GeminiOCR.clearKey();
+    renderGeminiButton(el, item, state, onQuestionsChanged);
+  });
+
+  el.querySelector("#run-gemini-btn").addEventListener("click", async () => {
+    const btn = el.querySelector("#run-gemini-btn");
+    const status = el.querySelector("#gemini-status");
+    btn.disabled = true;
+    status.innerHTML = `<div class="flex-gap mt-1"><span class="spinner" style="border-color: rgba(27,27,31,0.25); border-top-color: var(--ink);"></span> পড়া হচ্ছে...</div>`;
+
+    try{
+      const text = await GeminiOCR.transcribeImage(item.file);
+      const parsed = parseBulkQuestions(text);
+      if (parsed.length === 0){
+        status.innerHTML = `<p class="text-soft text-sm">কোনো প্রশ্ন খুঁজে পাওয়া যায়নি। ছবিটি স্পষ্ট কিনা যাচাই করুন, অথবা নিচে OCR/ম্যানুয়াল পদ্ধতি ব্যবহার করুন।</p>`;
+        btn.disabled = false;
+        return;
+      }
+      parsed.forEach(q => state.questions.push({
+        id: uid("q"),
+        question: q.question,
+        options: q.options,
+        answer: q.answer,
+      }));
+      status.innerHTML = `<p class="text-sm" style="color: var(--sage);">✓ ${parsed.length}টি প্রশ্ন যুক্ত হয়েছে।</p>`;
+      toast(`${parsed.length}টি প্রশ্ন যুক্ত হয়েছে।`, "success");
+      onQuestionsChanged();
+    }catch(err){
+      console.error(err);
+      const msg = String(err?.message || "");
+      if (msg.includes("GEMINI_KEY_INVALID")){
+        status.innerHTML = `<p class="text-sm" style="color: var(--pen-red);">API key ভুল বা কাজ করছে না। নতুন key দিয়ে আবার চেষ্টা করুন।</p>`;
+        GeminiOCR.clearKey();
+        renderGeminiButton(el, item, state, onQuestionsChanged);
+        return;
+      }
+      status.innerHTML = `<p class="text-sm" style="color: var(--pen-red);">সমস্যা হয়েছে (${msg || "unknown"})। আবার চেষ্টা করুন।</p>`;
+    }finally{
+      btn.disabled = false;
+    }
+  });
 }
 
 // ── Manual entry mode ───────────────────────────────────────────────
